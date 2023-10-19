@@ -1,0 +1,26 @@
+{
+    "name": "com.modoium.service",
+    "version": "0.8.0",
+    "displayName": "Modoium",
+    "description": "",
+    "unity": "2020.3",
+    "author": {
+        "name": "Clicked, Inc.",
+        "email": "contact@clicked.co.kr",
+        "url": "https://www.clicked.co.kr"
+    },
+    "keywords": [
+        "vr",
+        "xr",
+        "mr",
+        "reality",
+        "xreditorsubsystem"
+    ],
+    "dependencies": {
+        "com.unity.xr.management": "4.4.0",
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+    },
+    "documentationUrl": "https://clickedcorp.notion.site/onAirXR-Unity-XR-Plugin-User-Guide-64af3154423b4ec28cb8e394b9b0e06b?pvs=4",
+    "changelogUrl": "",
+    "licensesUrl": ""
+}
