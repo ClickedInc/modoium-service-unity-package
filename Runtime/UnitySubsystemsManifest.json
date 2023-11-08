@@ -6,5 +6,7 @@
         "id": "Modoium Display",
         "supportedMirrorBlitReservedModes": ["leftEye", "rightEye", "sideBySide", "none"]
     }],
-    "inputs": []
+    "inputs": [{
+        "id": "Modoium Input"
+    }]
 }
