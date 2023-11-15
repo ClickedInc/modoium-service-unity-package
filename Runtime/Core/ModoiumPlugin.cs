@@ -9,16 +9,6 @@ namespace Modoium.Service {
     internal static class ModoiumPlugin {
         private const string LibName = "modoium";
 
-        [DllImport(LibName, EntryPoint = "mdm_configure")]
-        public static extern void Configure(float idleFrameRate,
-                                            float maxFrameRate,
-                                            int audioSampleRate,
-                                            int displayTextureColorSpaceHint,
-                                            bool cpuReadableEncodeBuffer,
-                                            int codecs,
-                                            int encodingPreset,
-                                            int encodingPerformance);
-
         [DllImport(LibName, EntryPoint = "mdm_startupService")]
         public static extern void StartupService(string serviceName, string userdata);
 
@@ -31,27 +21,20 @@ namespace Modoium.Service {
         [DllImport(LibName, EntryPoint = "mdm_removeFirstMessageFromQueue")]
         public static extern void RemoveFirstMessageFromQueue();
 
-        [DllImport(LibName, EntryPoint = "mdm_rejectInitiation")]
-        public static extern void RejectInitiation(string reason);
-
-        public static void AcceptInitiation(MDMAppData appData) {
-            mdm_acceptInitiation(JsonConvert.SerializeObject(appData));
-        }
-
         [DllImport(LibName, EntryPoint = "mdm_processMasterAudioOutput")]
         public static extern void ProcessMasterAudioOutput(float[] data, int sampleCount, int channels, double timestamp);
 
-        [DllImport(LibName)] private static extern void mdm_acceptInitiation(string param);
+        [DllImport(LibName, EntryPoint = "mdm_play")]
+        public static extern void Play(string clientAppData,
+                                       float idleFrameRate,
+                                       float maxFrameRate,
+                                       int audioSampleRate,
+                                       int displayTextureColorSpaceHint,
+                                       int codecs,
+                                       int encodingPreset,
+                                       int encodingQuality);
 
-        [Serializable]
-        public struct InitiationParams {
-            public string[] videoTypes;
-            public int videoWidth;
-            public int videoHeight;
-            public float videoFramerate;
-            public long videoBitrate;
-            public string[] audioTypes;
-            public bool useMPEG4BitstreamFormat;
-        }
+        [DllImport(LibName, EntryPoint = "mdm_stop")]
+        public static extern void Stop();
     }
 }

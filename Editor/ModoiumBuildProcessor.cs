@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
@@ -8,9 +9,25 @@ namespace Modoium.Service.Editor {
         int IOrderedCallback.callbackOrder => 0;
 
         void IPreprocessBuildWithReport.OnPreprocessBuild(BuildReport report) {
-            cleanOldSettings();
+            removeSettingsFromPreloadAssets<ModoiumSettings>();
+            addSettingsToPreloadAssets<ModoiumSettings>(ModoiumSettings.SettingsKey);
+            
+#if UNITY_XR_MANAGEMENT
+            removeSettingsFromPreloadAssets<ModoiumXRSettings>();
+            addSettingsToPreloadAssets<ModoiumXRSettings>(ModoiumXRSettings.SettingsKey);
+#endif
+        }
 
-            EditorBuildSettings.TryGetConfigObject(ModoiumSettings.SettingsKey, out ModoiumSettings settings);
+        void IPostprocessBuildWithReport.OnPostprocessBuild(BuildReport report) {
+            removeSettingsFromPreloadAssets<ModoiumSettings>();
+            
+#if UNITY_XR_MANAGEMENT
+            removeSettingsFromPreloadAssets<ModoiumXRSettings>();
+#endif
+        }
+
+        private void addSettingsToPreloadAssets<T>(string key) where T : UnityEngine.Object {
+            EditorBuildSettings.TryGetConfigObject(key, out T settings);
             if (settings == null) { return; }
 
             var preloadedAssets = PlayerSettings.GetPreloadedAssets();
@@ -21,15 +38,11 @@ namespace Modoium.Service.Editor {
             }
         }
 
-        void IPostprocessBuildWithReport.OnPostprocessBuild(BuildReport report) {
-            cleanOldSettings();   
-        }
-
-        private void cleanOldSettings() {
+        private void removeSettingsFromPreloadAssets<T>() {
             var preloadedAssets = PlayerSettings.GetPreloadedAssets();
             if (preloadedAssets == null) { return; }
 
-            var oldSettings = preloadedAssets.Where((asset) => asset?.GetType() == typeof(ModoiumSettings));
+            var oldSettings = preloadedAssets.Where((asset) => asset?.GetType() == typeof(T));
             if (oldSettings?.Any() ?? false) {
                 var assets = preloadedAssets.ToList();
                 foreach (var setting in oldSettings) {

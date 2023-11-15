@@ -1,7 +1,7 @@
 {
     "name": "com.modoium.service",
     "version": "0.8.0",
-    "displayName": "Modoium",
+    "displayName": "Modoium Remote",
     "description": "",
     "unity": "2020.3",
     "author": {
@@ -17,7 +17,6 @@
         "xreditorsubsystem"
     ],
     "dependencies": {
-        "com.unity.xr.management": "4.4.0",
         "com.unity.nuget.newtonsoft-json": "3.2.1"
     },
     "documentationUrl": "https://clickedcorp.notion.site/onAirXR-Unity-XR-Plugin-User-Guide-64af3154423b4ec28cb8e394b9b0e06b?pvs=4",

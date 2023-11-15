@@ -57,8 +57,10 @@ namespace Modoium.Service {
     [JsonObject(MemberSerialization.OptIn)]
     public class MDMOffer {
         internal static MDMOffer Parse(object obj) {
-            if (obj is JObject dict == false) { return null; }
-            else if (dict.ContainsKey("type") == false || dict.ContainsKey("accept") == false) { return null; }
+            if (obj is JObject == false) { return null; }
+
+            var dict = obj as JObject;
+            if (dict.ContainsKey("type") == false || dict.ContainsKey("accept") == false) { return null; }
 
             switch (dict.Value<string>("type")) {
                 case "video":

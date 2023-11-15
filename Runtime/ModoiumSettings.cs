@@ -1,94 +1,90 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.XR.Management;
+using UnityEngine.UIElements;
+using UnityEditor;
+using UnityEngine.XR;
 
 namespace Modoium.Service {
-    public enum MDMMirrorBlitMode {
-        None = 0,
-        Left = -1,
-        Right = -2,
-        SideBySide = -3
-    }
-
-    public enum MDMRenderPass {
-        SinglePassInstanced = 0,
-        MultiPass = 1
-    }
-
     public enum MDMTextureColorSpaceHint {
         None = 0,
         Gamma = 1,
         Linear = 2
     }
 
-    public enum MDMContentType {
-        None = 0,
-        MR = 0x01,
-        VR = 0x02,
-        Scene = 0x04
-    }
-
-    [Serializable]
-    [XRConfigurationData("Modoium", SettingsKey)]
     public class ModoiumSettings : ScriptableObject {
         internal const string SettingsKey = "com.modoium.service.settings";
 
+        internal const string AssetDir = "Assets/Modoium";
+        internal const string AssetPath = "Assets/Modoium/ModoiumSettings.asset";
+
         internal static bool IsUniversalRenderPipeline() => UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline?.GetType()?.Name?.Equals("UniversalRenderPipelineAsset") ?? false;
-        internal static bool IsHDRenderPipeline() => UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline?.GetType()?.Name?.Equals("HDRenderPipelineAsset") ?? false;
+        internal static bool IsHDRenderPipeline() => UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline?.GetType()?.Name?.Equals("HDRenderPipelineAsset") ?? false;        
 
 #if UNITY_EDITOR
         internal static ModoiumSettings instance {
             get {
-                UnityEngine.Object obj;
-                UnityEditor.EditorBuildSettings.TryGetConfigObject(SettingsKey, out obj);
-                if (obj == null || (obj is ModoiumSettings) == false) { return null; }
-
-                var settings = obj as ModoiumSettings;
-                settings.ParseCommandLine();
-
-                return settings;
+                return AssetDatabase.LoadAssetAtPath<ModoiumSettings>(AssetPath);
             }
         }
 #else
         internal static ModoiumSettings runtimeInstance { get; private set; } = null;
         internal static ModoiumSettings instance => runtimeInstance;
 
-        public void Awake() {
+        private void Awake() {
             if (runtimeInstance != null) { return; }
 
-            ParseCommandLine();
             runtimeInstance = this;
         }
 #endif
 
-        [SerializeField] private int contentType = (int)MDMContentType.None;
-        [SerializeField] [Range(10, 120)] private int minFrameRate = 10;
-        [SerializeField] private MDMMirrorBlitMode defaultMirrorBlitMode = MDMMirrorBlitMode.Left;
-        [SerializeField] private MDMRenderPass desiredRenderPass = MDMRenderPass.SinglePassInstanced;
+        internal static ModoiumSettings GetSettings() {
+            var settings = AssetDatabase.LoadAssetAtPath<ModoiumSettings>(AssetPath);
+            if (settings != null) { return settings; }
 
-        [SerializeField] private bool advancedSettingsEnabled = false;
-        [SerializeField] private MDMTextureColorSpaceHint displayTextureColorSpaceHint = MDMTextureColorSpaceHint.None;
+            if (Directory.Exists(AssetDir) == false) {
+                Directory.CreateDirectory(AssetDir);
+            }
 
-        internal int propMinFrameRate => minFrameRate;
-        internal int propDefaultMirrorBlitMode => (int)defaultMirrorBlitMode;
-        internal MDMRenderPass propDesiredRenderPass => advancedSettingsEnabled ? desiredRenderPass : MDMRenderPass.SinglePassInstanced;
+            settings = CreateInstance<ModoiumSettings>();
+            settings._bitrate = 24.0f;
+            AssetDatabase.CreateAsset(settings, AssetPath);
+            AssetDatabase.SaveAssets();
 
-        internal int propIdleFrameRate {
+            return settings;
+        }
+
+        internal static SerializedObject GetSerializedSettings() {
+            return new SerializedObject(GetSettings());
+        }
+
+        [SerializeField] [Range(4.0f, 200.0f)] private float _bitrate = 24.0f;
+        [SerializeField] private bool _advancedSettingsEnabled = false;
+        [SerializeField] private MDMTextureColorSpaceHint _displayTextureColorSpaceHint = MDMTextureColorSpaceHint.None;
+
+        internal string serviceName => Application.isEditor ? $"Unity Editor - {Application.productName}" : Application.productName;
+
+        internal string serviceUserdata => string.Empty;
+
+        internal int idleFrameRate {
             get {
-                if (Application.isEditor == false) { return propMinFrameRate; }
-
                 var resolution = Screen.currentResolution;
+                
+                #if UNITY_2022_2_OR_NEWER
                 return (int)(resolution.refreshRateRatio.numerator / resolution.refreshRateRatio.denominator);
+                #else
+                return resolution.refreshRate;
+                #endif
             }
         }
-        
-        internal MDMTextureColorSpaceHint propDisplayTextureColorSpaceHint {
-            get {
-                var value = advancedSettingsEnabled ? displayTextureColorSpaceHint : MDMTextureColorSpaceHint.None;
 
-                if (value == MDMTextureColorSpaceHint.None) {
+        internal MDMTextureColorSpaceHint displayTextureColorSpaceHint {
+            get {
+                var value = _advancedSettingsEnabled ? _displayTextureColorSpaceHint : MDMTextureColorSpaceHint.None;
+                if (value != MDMTextureColorSpaceHint.None) { return value; }
+
+                if (XRSettings.enabled) {
                     if (IsUniversalRenderPipeline()) {
                         // workaround: URP uses always non-sRGB texture even if color space is set to linear. (but xr plugin misleads as if it were sRGB.)
                         value = MDMTextureColorSpaceHint.Gamma;
@@ -98,60 +94,116 @@ namespace Modoium.Service {
                         value = MDMTextureColorSpaceHint.Gamma;
                     }
                 }
+                else {
+                    value = QualitySettings.activeColorSpace == ColorSpace.Linear ? MDMTextureColorSpaceHint.Linear : 
+                                                                                    MDMTextureColorSpaceHint.Gamma;
+                }
                 return value;
             }
         }
 
-        internal string serviceName => Application.isEditor ? $"Unity Editor - {Application.productName}" : Application.productName;
+        // private apis
+        [SerializeField] private MDMCodec _codecs = MDMCodec.All;
+        [SerializeField] private MDMEncodingPreset _encodingPreset = MDMEncodingPreset.LowLatency;
+        [SerializeField] private MDMEncodingQuality _encodingQuality = MDMEncodingQuality.VeryHigh;
 
-        internal string serviceUserdata {
-            get {
-                var ctypes = new List<string>();
-                if ((contentType & (int)MDMContentType.MR) != 0) { 
-                    ctypes.Add("mr");
-                }
-                if ((contentType & (int)MDMContentType.VR) != 0) { 
-                    ctypes.Add("vr"); 
-                }
-                if ((contentType & (int)MDMContentType.Scene) != 0) { 
-                    ctypes.Add("scene"); 
-                }
-                return $"ctypes={string.Join(";", ctypes)}";
-            }
-        }
-
-        internal ModoiumSettings ParseCommandLine() {
-            var pairs = MDMUtils.ParseCommandLine(Environment.GetCommandLineArgs());
-            if (pairs == null) { return this; }
-
-            foreach (var key in pairs.Keys) {
-                if (key.Equals("modoium_min_frame_rate")) {
-                    minFrameRate = MDMUtils.ParseInt(pairs[key], propMinFrameRate, (parsed) => parsed > 0);
-                }
-            }
-            return this;
-        }
-
-        // experimental features
-        #pragma warning disable 0414
-
-        [SerializeField] private bool cpuReadableEncodeBuffer = false;
-        [SerializeField] private MDMCodec codecs = MDMCodec.All;
-        [SerializeField] private MDMEncodingPreset encodingPreset = MDMEncodingPreset.LowLatency;
-        [SerializeField] private MDMEncodingQuality encodingQuality = MDMEncodingQuality.VeryHigh;
-
-        #pragma warning restore 0414        
-
-#if MODOIUM_EXPERIMENTAL
-        internal bool propCpuReadableEncodeBuffer => advancedSettingsEnabled ? cpuReadableEncodeBuffer : false;
-        internal MDMCodec propCodecs => advancedSettingsEnabled ? codecs : MDMCodec.All;
-        internal MDMEncodingPreset propEncodingPreset => advancedSettingsEnabled ? encodingPreset : MDMEncodingPreset.LowLatency;
-        internal MDMEncodingQuality propEncodingQuality => advancedSettingsEnabled ? encodingQuality : MDMEncodingQuality.VeryHigh;
+#if MODOIUM_PRIVATE_API
+            internal MDMCodec codecs => _advancedSettingsEnabled ? _codecs : MDMCodec.All;
+            internal MDMEncodingPreset encodingPreset => _advancedSettingsEnabled ? _encodingPreset : MDMEncodingPreset.LowLatency;
+            internal MDMEncodingQuality encodingQuality => _advancedSettingsEnabled ? _encodingQuality : MDMEncodingQuality.VeryHigh;
 #else
-        internal bool propCpuReadableEncodeBuffer => false;
-        internal MDMCodec propCodecs => MDMCodec.All;
-        internal MDMEncodingPreset propEncodingPreset => MDMEncodingPreset.LowLatency;
-        internal MDMEncodingQuality propEncodingQuality => MDMEncodingQuality.VeryHigh;
+            internal MDMCodec codecs => MDMCodec.All;
+            internal MDMEncodingPreset encodingPreset => MDMEncodingPreset.LowLatency;
+            internal MDMEncodingQuality encodingQuality => MDMEncodingQuality.VeryHigh;
+#endif
+    }
+
+    public class ModoiumSettingsProvider : SettingsProvider {
+        [SettingsProvider]
+        public static SettingsProvider CreateSettingsProvider() {
+            return new ModoiumSettingsProvider("Project/ModoiumRemoteSettings", SettingsScope.Project) {
+                label = "Modoium Remote",
+                keywords = new HashSet<string>(new[] { "Modoium", "Remote" })
+            };
+        }
+
+        private SerializedObject _settings;
+        private SerializedProperty _propBitrate;
+        private SerializedProperty _propAdvancedSettingsEnabled;
+        private SerializedProperty _propDisplayTextureColorSpaceHint;
+
+        public ModoiumSettingsProvider(string path, SettingsScope scopes = SettingsScope.Project) : base(path, scopes) {
+            // NOTE: create settings asset if not exists
+            _settings = ModoiumSettings.GetSerializedSettings();
+        }
+
+        public override void OnActivate(string searchContext, VisualElement rootElement) {
+            _settings = ModoiumSettings.GetSerializedSettings();
+
+            _propBitrate = _settings.FindProperty("_bitrate");
+            _propAdvancedSettingsEnabled = _settings.FindProperty("_advancedSettingsEnabled");
+            _propDisplayTextureColorSpaceHint = _settings.FindProperty("_displayTextureColorSpaceHint");
+
+            PrivateAPI_OnActivate();
+        }
+
+        public override void OnGUI(string searchContext) {
+            var prevLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 200;
+            {
+                EditorGUILayout.PropertyField(_propBitrate, Styles.labelBitrate);
+
+                EditorGUILayout.Space();
+
+                EditorGUILayout.BeginVertical("box");
+                {
+                    EditorGUILayout.PropertyField(_propAdvancedSettingsEnabled, Styles.labelAdvancedSettingsEnabled);
+                    if (_propAdvancedSettingsEnabled.boolValue) {
+                        EditorGUILayout.Space();
+
+                        EditorGUILayout.PropertyField(_propDisplayTextureColorSpaceHint, Styles.labelDisplayTextureColorSpaceHint);
+                        PrivateAPI_renderAdvancedSettings();
+                    }
+                }
+                EditorGUILayout.EndVertical();
+            }
+            EditorGUIUtility.labelWidth = prevLabelWidth;
+
+            _settings.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static class Styles {
+            public static GUIContent labelBitrate = new GUIContent("Video Bitrate (Mbps)");
+            public static GUIContent labelAdvancedSettingsEnabled = new GUIContent("Advanced Settings");
+            public static GUIContent labelDisplayTextureColorSpaceHint = new GUIContent("Display Texture Color Space Hint");
+        }
+
+        // private apis
+#if MODOIUM_PRIVATE_API
+        private SerializedProperty _propCodecs;
+        private SerializedProperty _propEncodingPreset;
+        private SerializedProperty _propEncodingQuality;
+
+        private void PrivateAPI_OnActivate() {
+            _propCodecs = _settings.FindProperty("_codecs");
+            _propEncodingPreset = _settings.FindProperty("_encodingPreset");
+            _propEncodingQuality = _settings.FindProperty("_encodingQuality");
+        }
+
+        private void PrivateAPI_renderAdvancedSettings() {
+            EditorGUILayout.PropertyField(_propCodecs, PrivateAPI_Styles.labelCodecs);
+            EditorGUILayout.PropertyField(_propEncodingPreset, PrivateAPI_Styles.labelEncodingPreset);
+            EditorGUILayout.PropertyField(_propEncodingQuality, PrivateAPI_Styles.labelEncodingQuality);
+        }
+
+        private static class PrivateAPI_Styles {
+            public static GUIContent labelCodecs = new GUIContent("Codecs");
+            public static GUIContent labelEncodingPreset = new GUIContent("Encoding Preset");
+            public static GUIContent labelEncodingQuality = new GUIContent("Encoding Quality");
+        }
+#else
+        private void PrivateAPI_OnActivate() {}
+        private void PrivateAPI_renderAdvancedSettings() {}
 #endif
     }
 }
