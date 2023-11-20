@@ -5,57 +5,71 @@ using Unity.Plastic.Newtonsoft.Json;
 
 namespace Modoium.Service {
     internal class MDMService {
+        public interface IApplication {
+            bool isPlaying { get; }
+        }
+
         private const float MaxFrameRate = 120f;
 
+        private IApplication _app;
         private MDMMessageDispatcher _messageDispatcher;
         private MDMAudioListener _audioListener;
         private MDMAppData _clientAppData;
         private MDMVideoOffer _remoteViewConfig;
-        private bool _playing;
+        private MDMDisplayRenderer _displayRenderer;
 
         private bool remoteViewConnected => _remoteViewConfig != null;
 
-        public MDMService() {
+        public MDMService(IApplication app) {
+            _app = app;
             _messageDispatcher = new MDMMessageDispatcher();
+            _displayRenderer = new MDMDisplayRenderer(app as MonoBehaviour);
+
             _messageDispatcher.onMessageReceived += onMDMMessageReceived;
         }
 
         public void Startup() {
+            Debug.Log($"[modoium] startup");
             var settings = ModoiumSettings.instance;
 
             ModoiumPlugin.StartupService(settings.serviceName, settings.serviceUserdata);
         }
 
         public void Shutdown() {
+            Debug.Log($"[modoium] shutdown");
             ModoiumPlugin.ShutdownService();
 
             _messageDispatcher.onMessageReceived -= onMDMMessageReceived;
         }
 
         public void Play() {
-            if (_playing) { return; }
-            _playing = true;
+            Debug.Log($"[modoium] play: removeViewConnected = {remoteViewConnected}");
+            if (remoteViewConnected == false) { return; } 
 
-            if (remoteViewConnected) {
-                requestPlay();
-            }
+            _displayRenderer.Start(_remoteViewConfig);
+            requestPlay();
         }
 
         public void Stop() {
-            if (_playing == false) { return; }
-            _playing = false;
+            Debug.Log($"[modoium] stop: removeViewConnected = {remoteViewConnected}");
+            if (remoteViewConnected == false) { return; } 
 
-            if (remoteViewConnected) {
-                requestStop();
-            }
+            requestStop();
+            _displayRenderer.Stop();
         }
 
         public void Update() {
             _messageDispatcher.Dispatch();
 
+            updateGameView();
+
             if (Application.isPlaying) { 
                 ensureAudioListenerConfigured();
             }
+        }
+
+        private void updateGameView() {
+
         }
 
         private void ensureAudioListenerConfigured() {
@@ -89,6 +103,9 @@ namespace Modoium.Service {
             else if (message is MDMMessageAxrFinished axrFinished) {
                 onAxrFinished(axrFinished);
             }
+            else if (message is MDMMessageAxrClientAppData axrClientAppData) {
+                onAxrClientAppData(axrClientAppData);
+            }
         }
 
         private void onCoreConnected(MDMMessageCoreConnected message) {
@@ -111,16 +128,21 @@ namespace Modoium.Service {
         private void onAxrEstablished(MDMMessageAxrEstablished message) {
             // TODO adjust game view size wrt remote view size
 
-            if (_playing) { 
-                requestPlay();
+            if (_app.isPlaying) { 
+                Play();
             }
         }
 
         private void onAxrFinished(MDMMessageAxrFinished message) {
-            Debug.Log($"[modoium] axr finished: {message.code}: {message.reason}");
+            _displayRenderer.Stop();
 
             _clientAppData = null;
             _remoteViewConfig = null;
+        }
+
+        private void onAxrClientAppData(MDMMessageAxrClientAppData message) {
+            _clientAppData = message.appData;
+            _remoteViewConfig = message.appData.videoOffer;
         }
 
         private void requestPlay() {

@@ -13,6 +13,7 @@ namespace Modoium.Service {
         public const string NameAxrInitiated = "axr-initiated";
         public const string NameAxrEstablished = "axr-established";
         public const string NameAxrFinished = "axr-finished";
+        public const string NameAxrClientAppData = "axr-client-app-data";
     }
 
     internal class MDMMessageCoreConnected : MDMMessage {}
@@ -61,6 +62,14 @@ namespace Modoium.Service {
 
             code = dict.Value<int>("code");
             reason = dict.Value<string>("reason");
+        }
+    }
+
+    internal class MDMMessageAxrClientAppData : MDMMessage {
+        public MDMAppData appData { get; private set; }
+
+        public MDMMessageAxrClientAppData(object body) {
+            appData = new MDMAppData(body);
         }
     }
 }

@@ -5,9 +5,10 @@ using UnityEngine;
 
 namespace Modoium.Service.Editor {
     [InitializeOnLoad]
-    internal class MDMEditorService {
+    internal class MDMEditorService : MDMService.IApplication {
         private static MDMEditorService _instance;
         private static bool _started;
+        private static bool _playRequested;
 
         static MDMEditorService() {
             EditorApplication.update += EditorUpdate;
@@ -24,11 +25,16 @@ namespace Modoium.Service.Editor {
             }
 
             _instance.Update();
+
+            if (_playRequested) {
+                _instance.play();
+                _playRequested = false;
+            }
         }
 
         static void EditorPlayModeStateChanged(PlayModeStateChange state) {
-            if (state == PlayModeStateChange.ExitingEditMode) {
-                _instance.play();
+            if (state == PlayModeStateChange.EnteredPlayMode) {
+                _playRequested = true;
             }
             else if (state == PlayModeStateChange.ExitingPlayMode) {
                 _instance.stop();
@@ -42,7 +48,7 @@ namespace Modoium.Service.Editor {
         private MDMService _service;
 
         private MDMEditorService() {
-            _service = new MDMService();
+            _service = new MDMService(this);
         }
 
         private void Start() {
@@ -64,5 +70,8 @@ namespace Modoium.Service.Editor {
         private void stop() {
             _service.Stop();
         }
+
+        // implements MDMService.IApplication
+        bool MDMService.IApplication.isPlaying => Application.isPlaying;
     }
 }

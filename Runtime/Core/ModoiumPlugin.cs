@@ -4,10 +4,28 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.XR;
+
+#if UNITY_XR_MANAGEMENT
+using UnityEngine.XR.Management;
+#endif
 
 namespace Modoium.Service {
     internal static class ModoiumPlugin {
         private const string LibName = "modoium";
+
+#if UNITY_XR_MANAGEMENT
+        public static bool isXR {
+            get {
+                if (Application.isEditor == false) { return XRSettings.enabled; }
+
+                return XRGeneralSettings.Instance?.InitManagerOnStart ?? false;
+            }
+        }
+#else
+        public static bool isXR => false;
+#endif
 
         [DllImport(LibName, EntryPoint = "mdm_startupService")]
         public static extern void StartupService(string serviceName, string userdata);
@@ -36,5 +54,36 @@ namespace Modoium.Service {
 
         [DllImport(LibName, EntryPoint = "mdm_stop")]
         public static extern void Stop();
+
+        public static void RenderInit(CommandBuffer commandBuffer) {
+            commandBuffer.IssuePluginEvent(mdm_init_renderThread_func(), 0);
+        }
+
+        public static void RenderUpdate(CommandBuffer commandBuffer) {
+            commandBuffer.IssuePluginEvent(mdm_update_renderThread_func(), 0);
+        }
+
+        public static void RenderFramebuffersReallocated(CommandBuffer commandBuffer, IntPtr nativeFramebufferArray) {
+            commandBuffer.IssuePluginEventAndData(mdm_framebuffersReallocated_renderThread_func(), 0, nativeFramebufferArray);
+        }
+
+        public static void RenderPreRender(CommandBuffer commandBuffer) {
+            commandBuffer.IssuePluginEvent(mdm_preRender_renderThread_func(), 0);
+        }
+
+        public static void RenderPostRender(CommandBuffer commandBuffer, int framebufferIndex) {
+            commandBuffer.IssuePluginEvent(mdm_postRender_renderThread_func(), framebufferIndex);
+        }
+
+        public static void RenderCleanup(CommandBuffer commandBuffer) {
+            commandBuffer.IssuePluginEvent(mdm_cleanup_renderThread_func(), 0);
+        }
+
+        [DllImport(LibName)] private static extern IntPtr mdm_init_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_update_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_framebuffersReallocated_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_preRender_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_postRender_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_cleanup_renderThread_func();
     }
 }

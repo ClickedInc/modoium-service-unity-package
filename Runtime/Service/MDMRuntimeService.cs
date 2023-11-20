@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Modoium.Service {
-    public class MDMRuntimeService : MonoBehaviour {
+    public class MDMRuntimeService : MonoBehaviour, MDMService.IApplication {
         public static MDMRuntimeService instance { get; private set; }
 
         internal static async void LoadOnce() {
@@ -16,8 +16,9 @@ namespace Modoium.Service {
                 await Task.Yield();
             }
 
-            var go = new GameObject("ModoiumService");
-            go.hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector;
+            var go = new GameObject("ModoiumService") {
+                hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector
+            };
             DontDestroyOnLoad(go);
 
             instance = go.AddComponent<MDMRuntimeService>();
@@ -26,7 +27,7 @@ namespace Modoium.Service {
         private MDMService _service;
 
         private void Awake() {
-            _service = new MDMService();
+            _service = new MDMService(this);
         }
 
         private void Start() {
@@ -48,5 +49,8 @@ namespace Modoium.Service {
             
             instance = null;
         }
+
+        // implements MDMService.IApplication
+        bool MDMService.IApplication.isPlaying => true;
     }
 }

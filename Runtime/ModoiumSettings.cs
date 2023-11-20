@@ -23,11 +23,7 @@ namespace Modoium.Service {
         internal static bool IsHDRenderPipeline() => UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline?.GetType()?.Name?.Equals("HDRenderPipelineAsset") ?? false;        
 
 #if UNITY_EDITOR
-        internal static ModoiumSettings instance {
-            get {
-                return AssetDatabase.LoadAssetAtPath<ModoiumSettings>(AssetPath);
-            }
-        }
+        internal static ModoiumSettings instance => GetSettings();
 #else
         internal static ModoiumSettings runtimeInstance { get; private set; } = null;
         internal static ModoiumSettings instance => runtimeInstance;
@@ -84,7 +80,7 @@ namespace Modoium.Service {
                 var value = _advancedSettingsEnabled ? _displayTextureColorSpaceHint : MDMTextureColorSpaceHint.None;
                 if (value != MDMTextureColorSpaceHint.None) { return value; }
 
-                if (XRSettings.enabled) {
+                if (ModoiumPlugin.isXR) {
                     if (IsUniversalRenderPipeline()) {
                         // workaround: URP uses always non-sRGB texture even if color space is set to linear. (but xr plugin misleads as if it were sRGB.)
                         value = MDMTextureColorSpaceHint.Gamma;
@@ -95,17 +91,25 @@ namespace Modoium.Service {
                     }
                 }
                 else {
-                    value = QualitySettings.activeColorSpace == ColorSpace.Linear ? MDMTextureColorSpaceHint.Linear : 
-                                                                                    MDMTextureColorSpaceHint.Gamma;
+                    if (IsUniversalRenderPipeline()) {
+                        // workaround: URP uses always non-sRGB texture even if color space is set to linear. (but xr plugin misleads as if it were sRGB.)
+                        value = MDMTextureColorSpaceHint.Gamma;
+                    }
+                    else {
+                        value = QualitySettings.activeColorSpace == ColorSpace.Linear ? MDMTextureColorSpaceHint.Linear : 
+                                                                                        MDMTextureColorSpaceHint.Gamma;
+                    }
                 }
                 return value;
             }
         }
 
         // private apis
+#pragma warning disable 0414
         [SerializeField] private MDMCodec _codecs = MDMCodec.All;
         [SerializeField] private MDMEncodingPreset _encodingPreset = MDMEncodingPreset.LowLatency;
         [SerializeField] private MDMEncodingQuality _encodingQuality = MDMEncodingQuality.VeryHigh;
+#pragma warning restore 0414
 
 #if MODOIUM_PRIVATE_API
             internal MDMCodec codecs => _advancedSettingsEnabled ? _codecs : MDMCodec.All;

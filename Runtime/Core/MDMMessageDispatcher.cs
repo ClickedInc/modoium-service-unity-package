@@ -45,6 +45,9 @@ namespace Modoium.Service {
                     case MDMMessage.NameAxrFinished:
                         onMessageReceived?.Invoke(new MDMMessageAxrFinished(body));
                         break;
+                    case MDMMessage.NameAxrClientAppData:
+                        onMessageReceived?.Invoke(new MDMMessageAxrClientAppData(body));
+                        break;
                 }
             }
         }
