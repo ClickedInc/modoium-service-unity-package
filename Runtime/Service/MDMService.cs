@@ -88,23 +88,26 @@ namespace Modoium.Service {
             if (message is MDMMessageCoreConnected coreConnected) {
                 onCoreConnected(coreConnected);
             }
+            else if (message is MDMMessageCoreConnectionFailed coreConnectionFailed) {
+                onCoreConnectionFailed(coreConnectionFailed);
+            }
             else if (message is MDMMessageCoreDisconnected coreDisconnected) {
                 onCoreDisconnected(coreDisconnected);
             }
-            else if (message is MDMMessageAxrOpenFailed axrOpenFailed) {
-                onAxrOpenFailed(axrOpenFailed);
+            else if (message is MDMMessageSessionInitiated sessionInitiated) {
+                onSessionInitiated(sessionInitiated);
             }
-            else if (message is MDMMessageAxrInitiated axrInitiated) {
-                onAxrInitiated(axrInitiated);
+            else if (message is MDMMessageSessionCancelled sessionCancelled) {
+                onSessionCancelled(sessionCancelled);
             }
-            else if (message is MDMMessageAxrEstablished axrEstablished) {
-                onAxrEstablished(axrEstablished);
+            else if (message is MDMMessageAmpOpened ampOpened) {
+                onAmpOpened(ampOpened);
             }
-            else if (message is MDMMessageAxrFinished axrFinished) {
-                onAxrFinished(axrFinished);
+            else if (message is MDMMessageAmpClosed ampClosed) {
+                onAmpClosed(ampClosed);
             }
-            else if (message is MDMMessageAxrClientAppData axrClientAppData) {
-                onAxrClientAppData(axrClientAppData);
+            else if (message is MDMMessageClientAppData clientAppData) {
+                onClientAppData(clientAppData);
             }
         }
 
@@ -112,33 +115,41 @@ namespace Modoium.Service {
             Debug.Log("[modoium] core connected");
         }
 
+        private void onCoreConnectionFailed(MDMMessageCoreConnectionFailed message) {
+            Debug.Log($"[modoium] core connection failed: code: {message.code}, status: {message.statusCode}, reason: {message.reason}");
+        }
+
         private void onCoreDisconnected(MDMMessageCoreDisconnected message) {
             Debug.Log($"[modoium] core disconnected: {message.statusCode}: {message.closeReason}");
         }
 
-        private void onAxrOpenFailed(MDMMessageAxrOpenFailed message) {
-            Debug.Log($"[modoium] axr open failed: {message.code}");
-        }
-
-        private void onAxrInitiated(MDMMessageAxrInitiated message) {
+        private void onSessionInitiated(MDMMessageSessionInitiated message) {
             _clientAppData = message.appData;
             _remoteViewConfig = message.appData.videoOffer;
         }
+        
+        private void onSessionCancelled(MDMMessageSessionCancelled message) {
+            _displayRenderer.Stop(); 
 
-        private void onAxrEstablished(MDMMessageAxrEstablished message) {
+            Debug.Log($"[modoium] session cancelled: reason = {message.reason}");
+            _clientAppData = null;
+            _remoteViewConfig = null;
+        }
+
+        private void onAmpOpened(MDMMessageAmpOpened message) {
             if (_app.isPlaying) { 
                 Play();
             }
         }
 
-        private void onAxrFinished(MDMMessageAxrFinished message) {
+        private void onAmpClosed(MDMMessageAmpClosed message) {
             _displayRenderer.Stop(); 
 
             _clientAppData = null;
             _remoteViewConfig = null;
         }
 
-        private void onAxrClientAppData(MDMMessageAxrClientAppData message) {
+        private void onClientAppData(MDMMessageClientAppData message) {
             _clientAppData = message.appData;
             _remoteViewConfig = message.appData.videoOffer;
         }

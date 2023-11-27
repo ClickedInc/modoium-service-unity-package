@@ -18,6 +18,8 @@ namespace Modoium.Service {
                 Marshal.Copy(data, buffer, 0, length);
                 ModoiumPlugin.RemoveFirstMessageFromQueue();
 
+                Debug.Log($"message received: {Encoding.UTF8.GetString(buffer, 0, length)}");
+
                 var message = JsonConvert.DeserializeObject<Dictionary<string, object>>(Encoding.UTF8.GetString(buffer, 0, length));
                 if (message.ContainsKey("name") == false) { continue;}
 
@@ -30,23 +32,26 @@ namespace Modoium.Service {
                     case MDMMessage.NameCoreConnected:
                         onMessageReceived?.Invoke(new MDMMessageCoreConnected());
                         break;
+                    case MDMMessage.NameCoreConnectionFailed:
+                        onMessageReceived?.Invoke(new MDMMessageCoreConnectionFailed(body));
+                        break;
                     case MDMMessage.NameCoreDisconnected:
                         onMessageReceived?.Invoke(new MDMMessageCoreDisconnected(body));
                         break;
-                    case MDMMessage.NameAxrOpenFailed:
-                        onMessageReceived?.Invoke(new MDMMessageAxrOpenFailed(body));
+                    case MDMMessage.NameSessionInitiated:
+                        onMessageReceived?.Invoke(new MDMMessageSessionInitiated(body));
                         break;
-                    case MDMMessage.NameAxrInitiated:
-                        onMessageReceived?.Invoke(new MDMMessageAxrInitiated(body));
+                    case MDMMessage.NameSessionCancelled:
+                        onMessageReceived?.Invoke(new MDMMessageSessionCancelled(body));
                         break;
-                    case MDMMessage.NameAxrEstablished:
-                        onMessageReceived?.Invoke(new MDMMessageAxrEstablished());
+                    case MDMMessage.NameAmpOpened:
+                        onMessageReceived?.Invoke(new MDMMessageAmpOpened());
                         break;
-                    case MDMMessage.NameAxrFinished:
-                        onMessageReceived?.Invoke(new MDMMessageAxrFinished(body));
+                    case MDMMessage.NameAmpClosed:
+                        onMessageReceived?.Invoke(new MDMMessageAmpClosed());
                         break;
-                    case MDMMessage.NameAxrClientAppData:
-                        onMessageReceived?.Invoke(new MDMMessageAxrClientAppData(body));
+                    case MDMMessage.NameClientAppData:
+                        onMessageReceived?.Invoke(new MDMMessageClientAppData(body));
                         break;
                 }
             }

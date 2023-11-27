@@ -8,15 +8,31 @@ using UnityEngine.Jobs;
 namespace Modoium.Service {
     internal class MDMMessage {
         public const string NameCoreConnected = "core-connected";
+        public const string NameCoreConnectionFailed = "core-connection-failed";
         public const string NameCoreDisconnected = "core-disconnected";
-        public const string NameAxrOpenFailed = "axr-open-failed";
-        public const string NameAxrInitiated = "axr-initiated";
-        public const string NameAxrEstablished = "axr-established";
-        public const string NameAxrFinished = "axr-finished";
-        public const string NameAxrClientAppData = "axr-client-app-data";
+        public const string NameSessionInitiated = "session-initiated";
+        public const string NameSessionCancelled = "session-cancelled";
+        public const string NameAmpOpened = "amp-opened";
+        public const string NameAmpClosed = "amp-closed";
+        public const string NameClientAppData = "client-app-data";
     }
 
     internal class MDMMessageCoreConnected : MDMMessage {}
+
+    internal class MDMMessageCoreConnectionFailed : MDMMessage {
+        public int code { get; private set; }
+        public int statusCode { get; private set; }
+        public string reason { get; private set; }
+
+        public MDMMessageCoreConnectionFailed(object body) {
+            Debug.Assert(body is JObject);
+            var dict = body as JObject;
+
+            code = dict.Value<int>("code");
+            statusCode = dict.Value<int>("statusCode");
+            reason = dict.Value<string>("reason");
+        }
+    }
 
     internal class MDMMessageCoreDisconnected : MDMMessage {
         public int statusCode { get; private set; }
@@ -31,44 +47,32 @@ namespace Modoium.Service {
         }
     }
 
-    internal class MDMMessageAxrOpenFailed : MDMMessage {
-        public int code { get; private set; }
-
-        public MDMMessageAxrOpenFailed(object body) {
-            Debug.Assert(body is JObject);
-            var dict = body as JObject;
-
-            code = dict.Value<int>("code");
-        }
-    }
-
-    internal class MDMMessageAxrInitiated : MDMMessage {
+    internal class MDMMessageSessionInitiated : MDMMessage {
         public MDMAppData appData { get; private set; }
 
-        public MDMMessageAxrInitiated(object body) {
+        public MDMMessageSessionInitiated(object body) {
             appData = new MDMAppData(body);
         }
     }
 
-    internal class MDMMessageAxrEstablished : MDMMessage {}
-
-    internal class MDMMessageAxrFinished : MDMMessage {
-        public int code { get; private set; }
+    internal class MDMMessageSessionCancelled : MDMMessage {
         public string reason { get; private set; }
 
-        public MDMMessageAxrFinished(object body) {
+        public MDMMessageSessionCancelled(object body) {
             Debug.Assert(body is JObject);
             var dict = body as JObject;
 
-            code = dict.Value<int>("code");
             reason = dict.Value<string>("reason");
         }
     }
 
-    internal class MDMMessageAxrClientAppData : MDMMessage {
+    internal class MDMMessageAmpOpened : MDMMessage {}
+    internal class MDMMessageAmpClosed : MDMMessage {}
+
+    internal class MDMMessageClientAppData : MDMMessage {
         public MDMAppData appData { get; private set; }
 
-        public MDMMessageAxrClientAppData(object body) {
+        public MDMMessageClientAppData(object body) {
             appData = new MDMAppData(body);
         }
     }
