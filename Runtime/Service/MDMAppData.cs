@@ -164,7 +164,7 @@ namespace Modoium.Service {
             Debug.Assert(dict.ContainsKey("xfmtp"));
             var xfmtp = dict.Value<JObject>("xfmtp");
             this.xfmtp = new Xfmtp { 
-                useSizePrefix = dict.Value<bool>("useSizePrefix")
+                useSizePrefix = xfmtp.Value<bool>("useSizePrefix")
             };
         }
 
