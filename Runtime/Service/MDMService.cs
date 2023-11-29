@@ -21,7 +21,7 @@ namespace Modoium.Service {
         private MDMMessageDispatcher _messageDispatcher;
         private MDMAudioListener _audioListener;
         private MDMAppData _clientAppData;
-        private MDMVideoOffer _remoteViewConfig;
+        private MDMVideoDesc _remoteViewConfig;
         private MDMDisplayRenderer _displayRenderer;
         private DisplayConfigurator _displayConfigurator;
 
@@ -125,7 +125,7 @@ namespace Modoium.Service {
 
         private void onSessionInitiated(MDMMessageSessionInitiated message) {
             _clientAppData = message.appData;
-            _remoteViewConfig = message.appData.videoOffer;
+            _remoteViewConfig = message.appData.videoDesc;
         }
         
         private void onSessionCancelled(MDMMessageSessionCancelled message) {
@@ -151,7 +151,7 @@ namespace Modoium.Service {
 
         private void onClientAppData(MDMMessageClientAppData message) {
             _clientAppData = message.appData;
-            _remoteViewConfig = message.appData.videoOffer;
+            _remoteViewConfig = message.appData.videoDesc;
         }
 
         private void requestPlay() {
@@ -188,6 +188,7 @@ namespace Modoium.Service {
 
             private Type _typeGameView;
             private MethodInfo _methodGetMainPlayModeView;
+            private Vector2Int _lastRemoteViewSize;
 
             private EditorWindow mainGameView {
                 get {
@@ -218,17 +219,36 @@ namespace Modoium.Service {
             }
 
             public void Update() {
-                if (ModoiumPlugin.isXR ||
-                    _owner.remoteViewConnected == _syncedToRemote) { return; }
+                if (ModoiumPlugin.isXR) { return; }
 
                 if (_owner.remoteViewConnected) {
-                    _originalSize = currentSize;
+                    var remoteView = _owner._remoteViewConfig;
 
-                    syncGameViewToRemote(_owner._remoteViewConfig.width, _owner._remoteViewConfig.height);
+                    if (_syncedToRemote) {
+                        if (remoteView.width == _lastRemoteViewSize.x &&
+                            remoteView.height == _lastRemoteViewSize.y) { return; }
+
+                        syncGameViewToRemote(remoteView.width, remoteView.height);
+
+                        _lastRemoteViewSize.x = remoteView.width;
+                        _lastRemoteViewSize.y = remoteView.height;
+                    }
+                    else {
+                        _originalSize = currentSize;
+
+                        syncGameViewToRemote(remoteView.width, remoteView.height);
+
+                        _lastRemoteViewSize.x = remoteView.width;
+                        _lastRemoteViewSize.y = remoteView.height;
+                    }
                 }
-                else {
+                else if (_syncedToRemote) {
                     selectSize(_originalSize);
+
+                    _lastRemoteViewSize.x = 0;
+                    _lastRemoteViewSize.y = 0;
                 }
+
                 _syncedToRemote = _owner.remoteViewConnected;
             }
 
@@ -240,6 +260,8 @@ namespace Modoium.Service {
             }
 
             private void syncGameViewToRemote(int width, int height) {
+                if (width <= 0 || height <= 0) { return; }
+
                 var size = findRemoteSize();
                 if (size != null) {
                     size.GetType().GetField("m_Width", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(size, width);

@@ -18,7 +18,7 @@ namespace Modoium.Service {
             _commandBuffer = new CommandBuffer();
         }
 
-        public void Start(MDMVideoOffer displayConfig) {
+        public void Start(MDMVideoDesc displayConfig) {
             if (ModoiumPlugin.isXR || _running) { return; }
             _running = true;
 
@@ -89,7 +89,7 @@ namespace Modoium.Service {
                 }
             }
 
-            public SwapChain(MDMVideoOffer displayConfig) {
+            public SwapChain(MDMVideoDesc displayConfig) {
                 _textures = new RenderTexture[Length];
                 _framebufferArray = new FramebufferArray(Length);
                 nativeFramebufferArray = Marshal.AllocHGlobal(_framebufferArray.count * IntPtr.Size + sizeof(int));
@@ -114,7 +114,7 @@ namespace Modoium.Service {
                 Marshal.FreeHGlobal(nativeFramebufferArray);
             }
 
-            private void reallocate(MDMVideoOffer displayConfig) {
+            private void reallocate(MDMVideoDesc displayConfig) {
                 for (var index = 0; index < _textures.Length; index++) {
                     _textures[index]?.Release();
 
@@ -128,7 +128,7 @@ namespace Modoium.Service {
                 _reallocated = true;
             }
 
-            private RenderTexture createTexture(MDMVideoOffer displayConfig) {
+            private RenderTexture createTexture(MDMVideoDesc displayConfig) {
                 var texture = new RenderTexture(displayConfig.width, displayConfig.height, 0, RenderTextureFormat.BGRA32) {
                     useMipMap = false,
                     autoGenerateMips = false,

@@ -9,54 +9,50 @@ using Unity.Plastic.Newtonsoft.Json.Linq;
 namespace Modoium.Service {
     [JsonObject(MemberSerialization.OptIn)]
     public class MDMAppData {
-        [JsonProperty] private MDMOffer[] offer;
-        [JsonProperty] private MDMUserData userData;
+        [JsonProperty] private MDMMediaDesc[] medias;
 
-        public MDMVideoOffer videoOffer {
+        public MDMVideoDesc videoDesc {
             get {
-                foreach (var iter in offer) {
-                    if (iter is MDMVideoOffer videoOffer) {
-                        return videoOffer;
+                foreach (var iter in medias) {
+                    if (iter is MDMVideoDesc videoDesc) {
+                        return videoDesc;
                     }
                 }
                 return null;
             }
         }
 
-        public MDMAudioOffer audioOffer {
+        public MDMAudioDesc audioDesc {
             get {
-                foreach (var iter in offer) {
-                    if (iter is MDMAudioOffer audioOffer) {
-                        return audioOffer;
+                foreach (var iter in medias) {
+                    if (iter is MDMAudioDesc audioDesc) {
+                        return audioDesc;
                     }
                 }
                 return null;
             }
         }
 
-        public MDMAppData(MDMVideoOffer videoOffer) {
-            offer = new MDMOffer[] {
-                videoOffer,
-                new MDMAudioOffer(),
-                new MDMApplicationOffer()
+        public MDMAppData(MDMVideoDesc videoDesc) {
+            medias = new MDMMediaDesc[] {
+                videoDesc,
+                new MDMAudioDesc(),
+                new MDMApplicationDesc()
             };
-            userData = new MDMUserData();
         }
 
         public MDMAppData(object obj) {
             Debug.Assert(obj is JObject);
             var dict = obj as JObject;
 
-            Debug.Assert(dict.ContainsKey("offer"));
-            offer = dict.Value<JArray>("offer").Select((iter) => MDMOffer.Parse(iter)).Where((iter) => iter != null).ToArray();
-
-            userData = new MDMUserData(obj);
+            Debug.Assert(dict.ContainsKey("medias"));
+            medias = dict.Value<JArray>("medias").Select((iter) => MDMMediaDesc.Parse(iter)).Where((iter) => iter != null).ToArray();
         }
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class MDMOffer {
-        internal static MDMOffer Parse(object obj) {
+    public class MDMMediaDesc {
+        internal static MDMMediaDesc Parse(object obj) {
             if (obj is JObject == false) { return null; }
 
             var dict = obj as JObject;
@@ -64,25 +60,25 @@ namespace Modoium.Service {
 
             switch (dict.Value<string>("type")) {
                 case "video":
-                    return MDMVideoOffer.Parse(obj);
+                    return MDMVideoDesc.Parse(obj);
                 case "audio":
-                    return new MDMAudioOffer(obj);
+                    return new MDMAudioDesc(obj);
                 case "application":
-                    return new MDMApplicationOffer(obj);
+                    return new MDMApplicationDesc(obj);
                 default:
-                    return new MDMOffer(obj);
+                    return new MDMMediaDesc(obj);
             }
         }
 
         [JsonProperty] private string type;
         [JsonProperty] protected string[] accept;
 
-        internal MDMOffer(string type, string[] accept) {
+        internal MDMMediaDesc(string type, string[] accept) {
             this.type = type;
             this.accept = accept;
         }
 
-        internal MDMOffer(object obj) {
+        internal MDMMediaDesc(object obj) {
             Debug.Assert(obj is JObject);
             var dict = obj as JObject;
 
@@ -94,14 +90,14 @@ namespace Modoium.Service {
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class MDMVideoOffer : MDMOffer {
-        internal static new MDMVideoOffer Parse(object obj) {
+    public class MDMVideoDesc : MDMMediaDesc {
+        internal static new MDMVideoDesc Parse(object obj) {
             var dict = obj as JObject;
             if (dict.ContainsKey("stereoscopy")) {
-                return new MDMStereoVideoOffer(obj);
+                return new MDMStereoVideoDesc(obj);
             }
             else if (dict.ContainsKey("monoscopy")) {
-                return new MDMMonoVideoOffer(obj);
+                return new MDMMonoVideoDesc(obj);
             }
             return null;
         }
@@ -119,12 +115,12 @@ namespace Modoium.Service {
         internal string[] codecs => accept;
         internal bool useMPEG4BitstreamFormat => xfmtp.useSizePrefix;
 
-        internal MDMVideoOffer(string[] codecs, 
-                               int width, 
-                               int height, 
-                               float framerate,
-                               long startBitrate,
-                               long maxBitrate) : base("video", codecs) { 
+        internal MDMVideoDesc(string[] codecs, 
+                              int width, 
+                              int height, 
+                              float framerate,
+                              long startBitrate,
+                              long maxBitrate) : base("video", codecs) { 
             imageattr = new ImageAttr[] {
                 new ImageAttr { x = width, y = height }
             };
@@ -134,7 +130,7 @@ namespace Modoium.Service {
             xfmtp = new Xfmtp { useSizePrefix = false };
         }
 
-        internal MDMVideoOffer(object obj) : base(obj) {
+        internal MDMVideoDesc(object obj) : base(obj) {
             Debug.Assert(obj is JObject);
             var dict = obj as JObject;
 
@@ -187,24 +183,24 @@ namespace Modoium.Service {
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class MDMStereoVideoOffer : MDMVideoOffer {
+    public class MDMStereoVideoDesc : MDMVideoDesc {
         [JsonProperty] private Stereoscopy stereoscopy;
 
-        public MDMStereoVideoOffer(string[] codecs, 
-                                   int width, 
-                                   int height, 
-                                   float framerate,
-                                   long startBitrate,
-                                   long maxBitrate,
-                                   Vector4 leftEyeProjection,
-                                   float ipd) : base(codecs, width, height, framerate, startBitrate, maxBitrate) { 
+        public MDMStereoVideoDesc(string[] codecs, 
+                                  int width, 
+                                  int height, 
+                                  float framerate,
+                                  long startBitrate,
+                                  long maxBitrate,
+                                  Vector4 leftEyeProjection,
+                                  float ipd) : base(codecs, width, height, framerate, startBitrate, maxBitrate) { 
             stereoscopy = new Stereoscopy { 
                 leftEyeProjection = new float[] { leftEyeProjection.x, leftEyeProjection.y, leftEyeProjection.z, leftEyeProjection.w },
                 ipd = ipd
             };
         }
 
-        public MDMStereoVideoOffer(object obj) : base(obj) {
+        public MDMStereoVideoDesc(object obj) : base(obj) {
             Debug.Assert(obj is JObject);
             var dict = obj as JObject;
 
@@ -224,22 +220,22 @@ namespace Modoium.Service {
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class MDMMonoVideoOffer : MDMVideoOffer {
+    public class MDMMonoVideoDesc : MDMVideoDesc {
         [JsonProperty] private Monoscopy monoscopy;
 
-        public MDMMonoVideoOffer(string[] codecs, 
-                                 int width, 
-                                 int height, 
-                                 float framerate,
-                                 long startBitrate,
-                                 long maxBitrate,
-                                 Vector4 cameraProjection) : base(codecs, width, height, framerate, startBitrate, maxBitrate) {
+        public MDMMonoVideoDesc(string[] codecs, 
+                                int width, 
+                                int height, 
+                                float framerate,
+                                long startBitrate,
+                                long maxBitrate,
+                                Vector4 cameraProjection) : base(codecs, width, height, framerate, startBitrate, maxBitrate) {
             monoscopy = new Monoscopy {
                 cameraProjection = new float[] { cameraProjection.x, cameraProjection.y, cameraProjection.z, cameraProjection.w }
             };
         }
 
-        public MDMMonoVideoOffer(object obj) : base(obj) {
+        public MDMMonoVideoDesc(object obj) : base(obj) {
             Debug.Assert(obj is JObject);
             var dict = obj as JObject;
 
@@ -257,21 +253,16 @@ namespace Modoium.Service {
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class MDMAudioOffer : MDMOffer {
+    public class MDMAudioDesc : MDMMediaDesc {
         public string[] codecs => accept;
 
-        public MDMAudioOffer() : base("audio", new string[] { "opus" }) {}
-        public MDMAudioOffer(object obj) : base(obj) {}
+        public MDMAudioDesc() : base("audio", new string[] { "opus" }) {}
+        public MDMAudioDesc(object obj) : base(obj) {}
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    internal class MDMApplicationOffer : MDMOffer {
-        public MDMApplicationOffer() : base("application", new string[] { "onairxr-input" }) {}
-        public MDMApplicationOffer(object obj) : base(obj) {}
-    }
-
-    [JsonObject(MemberSerialization.OptIn)]
-    internal struct MDMUserData {
-        public MDMUserData(object obj) {}
+    internal class MDMApplicationDesc : MDMMediaDesc {
+        public MDMApplicationDesc() : base("application", new string[] { "onairxr-input" }) {}
+        public MDMApplicationDesc(object obj) : base(obj) {}
     }
 }
