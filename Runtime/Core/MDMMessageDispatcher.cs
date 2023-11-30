@@ -18,8 +18,6 @@ namespace Modoium.Service {
                 Marshal.Copy(data, buffer, 0, length);
                 ModoiumPlugin.RemoveFirstMessageFromQueue();
 
-                Debug.Log($"message received: {Encoding.UTF8.GetString(buffer, 0, length)}");
-
                 var message = JsonConvert.DeserializeObject<Dictionary<string, object>>(Encoding.UTF8.GetString(buffer, 0, length));
                 if (message.ContainsKey("name") == false) { continue;}
 

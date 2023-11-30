@@ -173,9 +173,26 @@ namespace Modoium.Service {
         }
 
         private class DisplayConfigurator {
+            private const string KeyOriginalSizeLabel = "com.modoium.remote.originalSizeLabel";
+
             private MDMService _owner;
             private bool _syncedToRemote;
-            private object _originalSize;
+            private string _originalSizeLabelCached;
+
+            private string originalSizeLabel {
+                get {
+                    _originalSizeLabelCached = PlayerPrefs.GetString(KeyOriginalSizeLabel, "");
+                    return _originalSizeLabelCached;
+                }
+                set {
+                    if (value == _originalSizeLabelCached) { return; }
+
+                    _originalSizeLabelCached = value;
+
+                    PlayerPrefs.SetString(KeyOriginalSizeLabel, value);
+                    PlayerPrefs.Save();
+                }
+            }
 
             public DisplayConfigurator(MDMService owner) {
                 _owner = owner;
@@ -184,7 +201,7 @@ namespace Modoium.Service {
             }
 
 #if UNITY_EDITOR
-            private const string RemoteSizeName = "Modoium Remote";
+            private const string RemoteSizeLabel = "Modoium Remote";
 
             private Type _typeGameView;
             private MethodInfo _methodGetMainPlayModeView;
@@ -234,7 +251,11 @@ namespace Modoium.Service {
                         _lastRemoteViewSize.y = remoteView.height;
                     }
                     else {
-                        _originalSize = currentSize;
+                        var currentSizeLabel = sizeLabel(currentSize);
+                        
+                        if (currentSizeLabel != RemoteSizeLabel) { 
+                            originalSizeLabel = currentSizeLabel;
+                        }
 
                         syncGameViewToRemote(remoteView.width, remoteView.height);
 
@@ -243,7 +264,7 @@ namespace Modoium.Service {
                     }
                 }
                 else if (_syncedToRemote) {
-                    selectSize(_originalSize);
+                    selectSize(findSizeFromLabel(originalSizeLabel));
 
                     _lastRemoteViewSize.x = 0;
                     _lastRemoteViewSize.y = 0;
@@ -281,7 +302,9 @@ namespace Modoium.Service {
             }
 
             private void selectSize(object size) {
-                var index = indexOfSize(size); 
+                if (size == null) { return; }
+
+                var index = sizeIndex(size); 
                 var gameView = mainGameView; 
                 if (gameView == null) { return; }
 
@@ -289,7 +312,7 @@ namespace Modoium.Service {
                 method.Invoke(gameView, new[] { index, size });
             }
 
-            private int indexOfSize(object size) {
+            private int sizeIndex(object size) {
                 var group = currentGroup;
                 var method = group.GetType().GetMethod("IndexOf", BindingFlags.Public | BindingFlags.Instance);
                 var index = (int)method.Invoke(group, new object[] { size });
@@ -304,26 +327,39 @@ namespace Modoium.Service {
                 return index;
             }
 
-            private object findRemoteSize() {
+            private object findRemoteSize() => findSizeFromLabel(RemoteSizeLabel, false);
+
+            private object findSizeFromLabel(string label, bool includeBuiltin = true) {
                 var group = currentGroup;
                 var customs = group.GetType().GetField("m_Custom", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(group);
 
-                var iter = (IEnumerator)customs.GetType().GetMethod("GetEnumerator").Invoke(customs, new object[] {});
+                var found = findSizeInListFromLabel(customs, label);
+                if (found != null || includeBuiltin == false) { return found; }
+
+                var builtins = group.GetType().GetField("m_Builtin", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(group);
+                return findSizeInListFromLabel(builtins, label);
+            }
+
+            private object findSizeInListFromLabel(object list, string label) {
+                if (list == null) { return null; }
+
+                var iter = (IEnumerator)list.GetType().GetMethod("GetEnumerator").Invoke(list, new object[] {});
                 while (iter.MoveNext()) {
-                    var label = (string)iter.Current.GetType().GetField("m_BaseText", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(iter.Current);
-                    if (label == RemoteSizeName) { 
+                    if (sizeLabel(iter.Current) == label) { 
                         return iter.Current; 
                     }
                 }
                 return null;
             }
 
+            private string sizeLabel(object size) => (string)size.GetType().GetField("m_BaseText", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(size);
+
             private object makeRemoteSize(int width, int height) {
                 var T = Type.GetType("UnityEditor.GameViewSize,UnityEditor");
                 var tt = Type.GetType("UnityEditor.GameViewSizeType,UnityEditor");
 
                 var c = T.GetConstructor(new[] { tt, typeof(int), typeof(int), typeof(string) });
-                var size = c.Invoke(new object[] { 1, width, height, RemoteSizeName });
+                var size = c.Invoke(new object[] { 1, width, height, RemoteSizeLabel });
                 return size;
             }
 #else

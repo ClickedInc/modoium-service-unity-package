@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.XR;
@@ -11,22 +10,37 @@ using UnityEngine.XR;
 using UnityEngine.XR.Management;
 #endif
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Modoium.Service {
     internal static class ModoiumPlugin {
         private const string LibName = "modoium";
 
 #if UNITY_XR_MANAGEMENT
+    #if UNITY_EDITOR
         public static bool isXR {
             get {
-                if (Application.isEditor == false) { return XRSettings.enabled; }
+                if (XRGeneralSettings.Instance != null) {
+                    return XRGeneralSettings.Instance.InitManagerOnStart;
+                }
 
-                return XRGeneralSettings.Instance?.InitManagerOnStart ?? false;
+                // Workaround: force to set XRGeneralSettings.Instance in non-play mode
+                EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out XRGeneralSettings _);
+                if (XRGeneralSettings.Instance != null) {
+                    return XRGeneralSettings.Instance.InitManagerOnStart;
+                }
+                return false;
             }
         }
+    #else
+        public static bool isXR => XRSettings.enabled;
+    #endif
 #else
         public static bool isXR => false;
 #endif
-
+        
         [DllImport(LibName, EntryPoint = "mdm_startupService")]
         public static extern void StartupService(string serviceName, string userdata);
 
