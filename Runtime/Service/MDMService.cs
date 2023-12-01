@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Reflection;
 using UnityEngine;
 using Unity.Plastic.Newtonsoft.Json;
@@ -21,18 +21,19 @@ namespace Modoium.Service {
         private MDMMessageDispatcher _messageDispatcher;
         private MDMAudioListener _audioListener;
         private MDMAppData _clientAppData;
-        private MDMVideoDesc _remoteViewConfig;
+        private MDMVideoDesc _remoteViewDesc;
         private MDMDisplayRenderer _displayRenderer;
         private DisplayConfigurator _displayConfigurator;
 
-        private bool remoteViewConnected => _remoteViewConfig != null;
+        private bool coreConnected { get; set; } = false;
+        private bool remoteViewConnected => coreConnected && _remoteViewDesc != null;
 
         public MDMService(IApplication app) {
             _app = app;
             _messageDispatcher = new MDMMessageDispatcher();
             _displayRenderer = new MDMDisplayRenderer(app as MonoBehaviour);
             _displayConfigurator = new DisplayConfigurator(this);
-
+ 
             _messageDispatcher.onMessageReceived += onMDMMessageReceived;
         }
 
@@ -51,7 +52,7 @@ namespace Modoium.Service {
         public void Play() {
             if (remoteViewConnected == false) { return; } 
 
-            _displayRenderer.Start(_remoteViewConfig);
+            _displayRenderer.Start(_remoteViewDesc);
             requestPlay();
         }
 
@@ -63,12 +64,14 @@ namespace Modoium.Service {
         }
 
         public void Update() {
-            _messageDispatcher.Dispatch();
-
-            _displayConfigurator.Update();
-
             if (Application.isPlaying) { 
                 ensureAudioListenerConfigured();
+            }
+
+            _messageDispatcher.Dispatch();
+
+            if (coreConnected) {
+                _displayConfigurator.Update();
             }
         }
 
@@ -112,28 +115,34 @@ namespace Modoium.Service {
         }
 
         private void onCoreConnected(MDMMessageCoreConnected message) {
-            Debug.Log("[modoium] core connected");
+            coreConnected = true;
         }
 
         private void onCoreConnectionFailed(MDMMessageCoreConnectionFailed message) {
-            Debug.Log($"[modoium] core connection failed: code: {message.code}, status: {message.statusCode}, reason: {message.reason}");
+            var failureCode = (MDMFailureCode)message.code;
+            if (failureCode != MDMFailureCode.CoreNotFound) {
+                Debug.LogWarning($"[modoium] core connection failed: {failureCode} (status code {message.statusCode}): {message.reason}");
+            }
+
+            tryReopenService();
         }
 
         private void onCoreDisconnected(MDMMessageCoreDisconnected message) {
-            Debug.Log($"[modoium] core disconnected: {message.statusCode}: {message.closeReason}");
+            coreConnected = false;
+            clearClientAppData();
+
+            tryReopenService();
         }
 
         private void onSessionInitiated(MDMMessageSessionInitiated message) {
-            _clientAppData = message.appData;
-            _remoteViewConfig = message.appData.videoDesc;
+            setClientAppData(message.appData);
         }
         
         private void onSessionCancelled(MDMMessageSessionCancelled message) {
-            _displayRenderer.Stop(); 
-
             Debug.Log($"[modoium] session cancelled: reason = {message.reason}");
-            _clientAppData = null;
-            _remoteViewConfig = null;
+
+            _displayRenderer.Stop(); 
+            clearClientAppData();
         }
 
         private void onAmpOpened(MDMMessageAmpOpened message) {
@@ -145,13 +154,29 @@ namespace Modoium.Service {
         private void onAmpClosed(MDMMessageAmpClosed message) {
             _displayRenderer.Stop(); 
 
-            _clientAppData = null;
-            _remoteViewConfig = null;
+            clearClientAppData();
         }
 
         private void onClientAppData(MDMMessageClientAppData message) {
-            _clientAppData = message.appData;
-            _remoteViewConfig = message.appData.videoDesc;
+            setClientAppData(message.appData);
+        }
+        
+        private async void tryReopenService() {
+            var settings = ModoiumSettings.instance;
+
+            await Task.Delay(TimeSpan.FromSeconds(0.2));
+
+            ModoiumPlugin.ReopenService(settings.serviceName, settings.serviceUserdata);
+        }
+
+        private void setClientAppData(MDMAppData appData) {
+            _clientAppData = appData;
+            _remoteViewDesc = appData.videoDesc;
+        }
+
+        private void clearClientAppData() {
+            _clientAppData = null;
+            _remoteViewDesc = null;
         }
 
         private void requestPlay() {
@@ -239,7 +264,7 @@ namespace Modoium.Service {
                 if (ModoiumPlugin.isXR) { return; }
 
                 if (_owner.remoteViewConnected) {
-                    var remoteView = _owner._remoteViewConfig;
+                    var remoteView = _owner._remoteViewDesc;
 
                     if (_syncedToRemote) {
                         if (remoteView.width == _lastRemoteViewSize.x &&

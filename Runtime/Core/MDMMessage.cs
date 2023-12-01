@@ -6,6 +6,13 @@ using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEngine.Jobs;
 
 namespace Modoium.Service {
+    internal enum MDMFailureCode : int {
+        CoreNotFound = -1,
+        SocketConnError = -2,
+        WebsocketInvalidHTTP = -3,
+        WebsocketHandshakeFailed = -4
+    }
+
     internal class MDMMessage {
         public const string NameCoreConnected = "core-connected";
         public const string NameCoreConnectionFailed = "core-connection-failed";
