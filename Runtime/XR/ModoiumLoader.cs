@@ -16,6 +16,10 @@ namespace Modoium.Service {
         private static List<XRInputSubsystemDescriptor> _inputSubsystemDescriptors = new List<XRInputSubsystemDescriptor>();
 
         public override bool Initialize() {
+#if UNITY_INPUT_SYSTEM && UNITY_XR_MANAGEMENT
+            MDMInputLayoutLoader.RegisterInputLayouts();
+#endif
+
             if (Application.isEditor == false) {
                 MDMRuntimeService.LoadOnce();
             }

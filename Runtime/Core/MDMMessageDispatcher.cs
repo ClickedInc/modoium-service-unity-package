@@ -46,7 +46,7 @@ namespace Modoium.Service {
                         onMessageReceived?.Invoke(new MDMMessageAmpOpened());
                         break;
                     case MDMMessage.NameAmpClosed:
-                        onMessageReceived?.Invoke(new MDMMessageAmpClosed());
+                        onMessageReceived?.Invoke(new MDMMessageAmpClosed(body));
                         break;
                     case MDMMessage.NameClientAppData:
                         onMessageReceived?.Invoke(new MDMMessageClientAppData(body));

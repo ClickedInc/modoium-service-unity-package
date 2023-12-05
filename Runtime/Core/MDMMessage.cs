@@ -13,6 +13,15 @@ namespace Modoium.Service {
         WebsocketHandshakeFailed = -4
     }
 
+    internal enum MDMCloseCode : int {
+        NormalClosure   = 1000,
+        ProtocolError   = 1002,
+        NoCode          = 1005,
+        SocketError     = 1101,
+        Timeout         = 1102,
+        InvalidFrame    = 1103
+    }
+
     internal class MDMMessage {
         public const string NameCoreConnected = "core-connected";
         public const string NameCoreConnectionFailed = "core-connection-failed";
@@ -74,7 +83,18 @@ namespace Modoium.Service {
     }
 
     internal class MDMMessageAmpOpened : MDMMessage {}
-    internal class MDMMessageAmpClosed : MDMMessage {}
+    internal class MDMMessageAmpClosed : MDMMessage {
+        public int code { get; private set; }
+        public string reason { get; private set; }
+
+        public MDMMessageAmpClosed(object body) {
+            Debug.Assert(body is JObject);
+            var dict = body as JObject;
+
+            code = dict.Value<int>("code");
+            reason = dict.Value<string>("reason");
+        }
+    }
 
     internal class MDMMessageClientAppData : MDMMessage {
         public MDMAppData appData { get; private set; }
