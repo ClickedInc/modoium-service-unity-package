@@ -58,7 +58,7 @@ namespace Modoium.Service {
                 _remainingToCreateEventSystem -= Time.deltaTime;
                 if (_remainingToCreateEventSystem >= 0) { return; }
 
-                eventSystem = new GameObject("EventSystem").AddComponent<EventSystem>();
+                eventSystem = createEventSystem();
             }
             _remainingToCreateEventSystem = TimeToWaitForEventSystem;
             
@@ -70,13 +70,19 @@ namespace Modoium.Service {
                 _input.Configure(_owner);
 
                 foreach (var inputModule in eventSystem.GetComponents<BaseInputModule>()) {
-                    if ((inputModule is StandaloneInputModule) == false) { continue; }
-
                     inputModule.inputOverride = _input;
                 }
             }
+        }
 
+        private EventSystem createEventSystem() {
+            var go = new GameObject("EventSystem");
+            var eventSystem = go.AddComponent<Modoium.Service.EventSystem>();
+            go.AddComponent<StandaloneInputModule>();
 
+            go.hideFlags = HideFlags.HideAndDontSave;
+
+            return eventSystem;
         }
 #else
         private void updateLegacyInputManager() {}
