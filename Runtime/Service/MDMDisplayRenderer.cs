@@ -7,7 +7,7 @@ using UnityEngine.Rendering;
 using System;
 
 namespace Modoium.Service {
-    public class MDMDisplayRenderer {
+    internal class MDMDisplayRenderer {
         private MonoBehaviour _driver;
         private CommandBuffer _commandBuffer;
         private SwapChain _swapChain;

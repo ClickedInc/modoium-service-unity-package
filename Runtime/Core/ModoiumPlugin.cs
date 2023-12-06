@@ -71,6 +71,29 @@ namespace Modoium.Service {
 
         [DllImport(LibName, EntryPoint = "mdm_stop")]
         public static extern void Stop();
+        
+        public static bool GetInputTouch2D(byte device, byte control, out Vector2 position, out byte state) {
+            if (mdm_getInputTouch2D(device, control, out var pos, out state)) {
+                position = pos.ToVector2();
+                return true;
+            }
+            else {
+                position = Vector2.zero;
+                return false;
+            }
+        }
+
+        [DllImport(LibName, EntryPoint = "mdm_updateInputFrame")]
+        public static extern void UpdateInputFrame();
+
+        [DllImport(LibName, EntryPoint = "mdm_isInputActive")]
+        public static extern bool IsInputActive(byte device, byte control);
+
+        [DllImport(LibName, EntryPoint = "mdm_getInputActivated")]
+        public static extern bool GetInputActivated(byte device, byte control);
+
+        [DllImport(LibName, EntryPoint = "mdm_getInputDeactivated")]
+        public static extern bool GetInputDeactivated(byte device, byte control);
 
         public static void RenderInit(CommandBuffer commandBuffer) {
             commandBuffer.IssuePluginEvent(mdm_init_renderThread_func(), 0);
@@ -102,5 +125,68 @@ namespace Modoium.Service {
         [DllImport(LibName)] private static extern IntPtr mdm_preRender_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_postRender_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_cleanup_renderThread_func();
+        [DllImport(LibName)] private static extern bool mdm_getInputTouch2D(byte device, byte control, out Vector2D position, out byte state);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Vector2D {
+            public float x;
+            public float y;
+
+            public Vector2D(Vector2 value) {
+                x = value.x;
+                y = value.y;
+            }
+
+            public Vector2 ToVector2() {
+                return new Vector2(x, y);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Vector3D {
+            public float x;
+            public float y;
+            public float z;
+
+            public Vector3D(Vector3 value) {
+                x = value.x;
+                y = value.y;
+                z = value.z;
+            }
+
+            public Vector3 ToVector3() {
+                return new Vector3(x, y, z);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Vector4D {
+            public float x;
+            public float y;
+            public float z;
+            public float w;
+
+            public Vector4D(Vector4 value) {
+                x = value.x;
+                y = value.y;
+                z = value.z;
+                w = value.w;
+            }
+
+            public Vector4D(Quaternion value) {
+                x = value.x;
+                y = value.y;
+                z = value.z;
+                w = value.w;
+            }
+
+            public Vector4 ToVector4() {
+                return new Vector4(x, y, z, w);
+            }
+
+            public Quaternion ToQuaternion() {
+                return new Quaternion(x, y, z, w);
+            }
+        }
     }
 }
