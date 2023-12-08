@@ -7,7 +7,9 @@
         "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [
+        "Android",
         "Editor",
+        "iOS",
         "WindowsStandalone64"
     ],
     "excludePlatforms": [],
@@ -16,18 +18,22 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [{
-        "name": "com.unity.inputsystem",
-        "expression": "",
-        "define": "UNITY_INPUT_SYSTEM"
-    }, {
-        "name": "com.unity.render-pipelines.universal",
-        "expression": "",
-        "define": "UNITY_RENDER_PIPELINES_UNIVERSAL"
-    }, {
-        "name": "com.unity.xr.management",
-        "expression": "",
-        "define": "UNITY_XR_MANAGEMENT"
-    }],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "UNITY_INPUT_SYSTEM"
+        },
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "",
+            "define": "UNITY_RENDER_PIPELINES_UNIVERSAL"
+        },
+        {
+            "name": "com.unity.xr.management",
+            "expression": "",
+            "define": "UNITY_XR_MANAGEMENT"
+        }
+    ],
     "noEngineReferences": false
 }

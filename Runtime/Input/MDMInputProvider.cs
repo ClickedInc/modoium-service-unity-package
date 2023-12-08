@@ -5,6 +5,22 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace Modoium.Service {
+    public class MDMInput : BaseInput {
+        public static MDMInput instance { get; private set; }
+
+        private MDMInputProvider _inputProvider;
+
+        public override bool touchSupported => true;
+        public override int touchCount => _inputProvider?.touchCount ?? 0;
+        public override Touch GetTouch(int index) => _inputProvider.GetTouch(index).Value;
+
+        internal void Configure(MDMInputProvider inputProvider) {
+            _inputProvider = inputProvider;
+            
+            instance = this;
+        }
+    }
+
     internal enum MDMInputDeviceID : byte {
         HeadTracker = 0,
         LeftHandTracker = 1,
@@ -28,103 +44,42 @@ namespace Modoium.Service {
 
     internal class MDMInputProvider {
         private MDMService _owner;
-
-        public MDMInputProvider(MDMService owner) {
-            _owner = owner;
-        }
-
-        public void Update() {
-            if (Application.isPlaying == false || ModoiumPlugin.isXR) { return; }
-
-            updateLegacyInputManager();
-            updateInputSystem();
-        }
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-        private const float TimeToWaitForEventSystem = 1.0f;
-
-        private MDMInput _input;
-        private float _remainingToCreateEventSystem = -1.0f;
-
-        private void updateLegacyInputManager() {
-            if (_input != null) { return; }
-
-            var eventSystem = EventSystem.current;
-            if (eventSystem == null) { 
-                if (_remainingToCreateEventSystem < 0) {
-                    _remainingToCreateEventSystem = TimeToWaitForEventSystem;
-                }
-
-                _remainingToCreateEventSystem -= Time.deltaTime;
-                if (_remainingToCreateEventSystem >= 0) { return; }
-
-                eventSystem = createEventSystem();
-            }
-            _remainingToCreateEventSystem = TimeToWaitForEventSystem;
-            
-            _input = eventSystem.gameObject.GetComponent<MDMInput>();
-            if (_input == null) {
-                _input = eventSystem.gameObject.AddComponent<MDMInput>();
-                _input.hideFlags = HideFlags.HideAndDontSave;
-
-                _input.Configure(_owner);
-
-                foreach (var inputModule in eventSystem.GetComponents<BaseInputModule>()) {
-                    inputModule.inputOverride = _input;
-                }
-            }
-        }
-
-        private EventSystem createEventSystem() {
-            var go = new GameObject("EventSystem");
-            var eventSystem = go.AddComponent<Modoium.Service.EventSystem>();
-            go.AddComponent<StandaloneInputModule>();
-
-            go.hideFlags = HideFlags.HideAndDontSave;
-
-            return eventSystem;
-        }
-#else
-        private void updateLegacyInputManager() {}
-#endif
-
-#if ENABLE_INPUT_SYSTEM
-        private void updateInputSystem() {
-
-        }
-#else
-        private void updateInputSystem() {}
-#endif
-    }
-
-///
-#if ENABLE_LEGACY_INPUT_MANAGER
-    public class MDMInput : BaseInput {
-        private MDMService _service;
         private Touch[] _touchPool = new Touch[(int)MDMTouchScreenControl.TouchCount];
         private List<Touch> _touches = new List<Touch>();
 
-        public override bool touchSupported => true;
-        public override int touchCount => _touches.Count;
+        internal int touchCount => _touches.Count;
 
-        public override Touch GetTouch(int index) {
-            return _touches[index];
-        }
-
-        internal void Configure(MDMService service) {
-            _service = service;
+        public MDMInputProvider(MDMService owner) {
+            _owner = owner;
 
             foreach (var index in Enumerable.Range(0, _touchPool.Length)) {
                 _touchPool[index] = new Touch();
             }
         }
 
-        private void Update() {
-            _touches.Clear();
+        public void Update() {
+            if (Application.isPlaying == false || ModoiumPlugin.isXR) { return; }
 
-            if ((_service?.remoteViewConnected) == false) { return; }
+            updateInputFrame();
 
+            updateLegacyInputManager();
+            updateInputSystem();
+        }
+
+        private void updateInputFrame() {
             ModoiumPlugin.UpdateInputFrame();
+            updateTouches();
+        }
+
+        public Touch? GetTouch(int index) {
+            if (index < 0 || index >= _touches.Count) { return null; }
+
+            return _touches[index];
+        }
+
+        private void updateTouches() {
+            _touches.Clear();
+            if (_owner.remoteViewConnected == false) { return; }
 
             for (byte control = 0; control < (byte)MDMTouchScreenControl.TouchCount; control++) {
                 var touch = getTouch(control, _touches.Count);
@@ -170,6 +125,73 @@ namespace Modoium.Service {
             }
             return touch;
         }
-    }
+
+        private const float TimeToWaitForEventSystem = 1.0f;
+
+        private MDMInput _input;
+        private float _remainingToCreateEventSystem = -1.0f;
+
+        private void updateLegacyInputManager() {
+            if (_input != null) { return; }
+
+            var eventSystem = EventSystem.current;
+            if (eventSystem == null) { 
+                if (_remainingToCreateEventSystem < 0) {
+                    _remainingToCreateEventSystem = TimeToWaitForEventSystem;
+                }
+
+                _remainingToCreateEventSystem -= Time.deltaTime;
+                if (_remainingToCreateEventSystem >= 0) { return; }
+
+                eventSystem = createEventSystem();
+            }
+            _remainingToCreateEventSystem = TimeToWaitForEventSystem;
+            
+            _input = eventSystem.gameObject.GetComponent<MDMInput>();
+            if (_input == null) {
+                _input = eventSystem.gameObject.AddComponent<MDMInput>();
+                _input.hideFlags = HideFlags.HideAndDontSave;
+
+                _input.Configure(this);
+
+                foreach (var inputModule in eventSystem.GetComponents<BaseInputModule>()) {
+                    inputModule.inputOverride = _input;
+                }
+            }
+        }
+
+        private EventSystem createEventSystem() {
+            var go = new GameObject("EventSystem") {
+                hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector
+            };
+            var eventSystem = go.AddComponent<Modoium.Service.EventSystem>();
+            go.AddComponent<StandaloneInputModule>();
+
+            return eventSystem;
+        }
+
+#if ENABLE_INPUT_SYSTEM
+        private MDMTouchScreen _touchscreen;
+
+        private void updateInputSystem() {
+            if (_touchscreen == null) {
+                _touchscreen = createTouchscreen();
+            }
+            _touchscreen.EnqueueInputEvents();
+        }
+
+        private MDMTouchScreen createTouchscreen() {
+            var go = new GameObject("ModoiumTouchscreen") {
+                hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector
+            };
+            var touchscreen = go.AddComponent<MDMTouchScreen>();
+            Object.DontDestroyOnLoad(go);
+    
+            touchscreen.Configure(this);        
+            return touchscreen;
+        }
+#else
+        private void updateInputSystem() {}
 #endif
+    }
 }

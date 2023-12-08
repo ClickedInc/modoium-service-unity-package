@@ -2,8 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEngine.Jobs;
+
+#if UNITY_EDITOR
+using Unity.Plastic.Newtonsoft.Json.Linq;
+#else
+using Newtonsoft.Json.Linq;
+#endif
 
 namespace Modoium.Service {
     internal enum MDMFailureCode : int {

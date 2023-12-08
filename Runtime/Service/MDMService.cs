@@ -3,10 +3,11 @@ using System.Collections;
 using System.Threading.Tasks;
 using System.Reflection;
 using UnityEngine;
-using Unity.Plastic.Newtonsoft.Json;
 
 #if UNITY_EDITOR
-using UnityEditor;
+using Unity.Plastic.Newtonsoft.Json;
+#else
+using Newtonsoft.Json;
 #endif
 
 namespace Modoium.Service {

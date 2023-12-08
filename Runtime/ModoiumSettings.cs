@@ -1,10 +1,11 @@
 using System.IO;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+
+#if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine.XR;
+#endif
 
 namespace Modoium.Service {
     public enum MDMTextureColorSpaceHint {
@@ -24,16 +25,7 @@ namespace Modoium.Service {
 
 #if UNITY_EDITOR
         internal static ModoiumSettings instance => GetSettings();
-#else
-        internal static ModoiumSettings runtimeInstance { get; private set; } = null;
-        internal static ModoiumSettings instance => runtimeInstance;
-
-        private void Awake() {
-            if (runtimeInstance != null) { return; }
-
-            runtimeInstance = this;
-        }
-#endif
+        internal static SerializedObject GetSerializedSettings() => new SerializedObject(GetSettings());
 
         internal static ModoiumSettings GetSettings() {
             var settings = AssetDatabase.LoadAssetAtPath<ModoiumSettings>(AssetPath);
@@ -50,10 +42,16 @@ namespace Modoium.Service {
 
             return settings;
         }
+#else
+        internal static ModoiumSettings runtimeInstance { get; private set; } = null;
+        internal static ModoiumSettings instance => runtimeInstance;
 
-        internal static SerializedObject GetSerializedSettings() {
-            return new SerializedObject(GetSettings());
+        private void Awake() {
+            if (runtimeInstance != null) { return; }
+
+            runtimeInstance = this;
         }
+#endif
 
         [SerializeField] [Range(4.0f, 200.0f)] private float _bitrate = 24.0f;
         [SerializeField] private bool _advancedSettingsEnabled = false;
@@ -122,6 +120,7 @@ namespace Modoium.Service {
 #endif
     }
 
+#if UNITY_EDITOR
     public class ModoiumSettingsProvider : SettingsProvider {
         [SettingsProvider]
         public static SettingsProvider CreateSettingsProvider() {
@@ -183,7 +182,7 @@ namespace Modoium.Service {
         }
 
         // private apis
-#if MODOIUM_PRIVATE_API
+    #if MODOIUM_PRIVATE_API
         private SerializedProperty _propCodecs;
         private SerializedProperty _propEncodingPreset;
         private SerializedProperty _propEncodingQuality;
@@ -205,9 +204,10 @@ namespace Modoium.Service {
             public static GUIContent labelEncodingPreset = new GUIContent("Encoding Preset");
             public static GUIContent labelEncodingQuality = new GUIContent("Encoding Quality");
         }
-#else
+    #else
         private void PrivateAPI_OnActivate() {}
         private void PrivateAPI_renderAdvancedSettings() {}
-#endif
+    #endif
     }
+#endif //UNITY_EDITOR
 }
