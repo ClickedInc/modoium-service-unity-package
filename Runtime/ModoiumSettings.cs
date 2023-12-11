@@ -58,7 +58,7 @@ namespace Modoium.Service {
         [SerializeField] private MDMTextureColorSpaceHint _displayTextureColorSpaceHint = MDMTextureColorSpaceHint.None;
 
         internal string serviceName => Application.isEditor ? $"Unity Editor - {Application.productName}" : Application.productName;
-
+        internal float bitrate => _bitrate;
         internal string serviceUserdata => string.Empty;
 
         internal int idleFrameRate {
@@ -151,6 +151,8 @@ namespace Modoium.Service {
         }
 
         public override void OnGUI(string searchContext) {
+            var bitrate = _propBitrate.floatValue;
+
             var prevLabelWidth = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = 200;
             {
@@ -173,6 +175,10 @@ namespace Modoium.Service {
             EditorGUIUtility.labelWidth = prevLabelWidth;
 
             _settings.ApplyModifiedPropertiesWithoutUndo();
+
+            if (bitrate != _propBitrate.floatValue) {
+                ModoiumPlugin.SetBitrateInMbps(_propBitrate.floatValue);
+            }
         }
 
         private static class Styles {

@@ -44,6 +44,7 @@ namespace Modoium.Service {
         public void Startup() {
             var settings = ModoiumSettings.instance;
 
+            ModoiumPlugin.SetBitrateInMbps(settings.bitrate);
             ModoiumPlugin.StartupService(settings.serviceName, settings.serviceUserdata);
         }
 

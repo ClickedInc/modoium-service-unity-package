@@ -56,6 +56,14 @@ namespace Modoium.Service {
         [DllImport(LibName, EntryPoint = "mdm_removeFirstMessageFromQueue")]
         public static extern void RemoveFirstMessageFromQueue();
 
+        [DllImport(LibName, EntryPoint = "mdm_setBitrate")]
+        public static extern void SetBitrate(long bitrate);
+
+        public static void SetBitrateInMbps(float bitrateInMbps) {
+            long roundedInKbps = Mathf.RoundToInt(bitrateInMbps * 1000);
+            SetBitrate(roundedInKbps * 1000);
+        }
+
         [DllImport(LibName, EntryPoint = "mdm_processMasterAudioOutput")]
         public static extern void ProcessMasterAudioOutput(float[] data, int sampleCount, int channels, double timestamp);
 
