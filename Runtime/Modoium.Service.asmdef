@@ -4,7 +4,8 @@
     "references": [
         "Unity.XR.Management",
         "Unity.InputSystem",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Runtime"
     ],
     "includePlatforms": [
         "Android",
@@ -33,6 +34,11 @@
             "name": "com.unity.xr.management",
             "expression": "",
             "define": "UNITY_XR_MANAGEMENT"
+        },
+        {
+            "name": "com.unity.render-pipelines.high-definition",
+            "expression": "",
+            "define": "UNITY_HDRP"
         }
     ],
     "noEngineReferences": false

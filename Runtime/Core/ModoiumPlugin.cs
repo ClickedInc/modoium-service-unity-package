@@ -162,6 +162,12 @@ namespace Modoium.Service {
                 z = value.z;
             }
 
+            public Vector3D(Color value) {
+                x = value.r;
+                y = value.g;
+                z = value.b;
+            }
+
             public Vector3 ToVector3() {
                 return new Vector3(x, y, z);
             }
@@ -196,5 +202,45 @@ namespace Modoium.Service {
                 return new Quaternion(x, y, z, w);
             }
         }
+
+        // private apis
+        public static void SetVolume(Mesh mesh) {
+            if (mesh == null || mesh.subMeshCount == 0 || mesh.vertexCount == 0 || mesh.GetTopology(0) != MeshTopology.Triangles) {
+                mdm_setVolume(null, 0, null, 0);
+                return;
+            }
+
+            var vertices = new float[mesh.vertexCount * 3];
+            for (var index = 0; index < mesh.vertexCount; index++) {
+                var vertex = mesh.vertices[index];
+
+                vertices[index * 3] = vertex.x;
+                vertices[index * 3 + 1] = vertex.y;
+                vertices[index * 3 + 2] = vertex.z;
+            }
+
+            var indices = mesh.GetIndices(0);
+            mdm_setVolume(vertices, vertices.Length, indices, indices.Length);
+        }
+
+        public static void ClearVolume() {
+            mdm_setVolume(null, 0, null, 0);
+        }
+
+        public static void UpdateVolumeInfo(Vector3 position, Quaternion rotation, Vector3 scale) {
+            mdm_updateVolumeInfo(new Vector3D(position), new Vector4D(rotation), new Vector3D(scale));
+        }
+
+        public static void SetChromaKeyCamera(Color keyColor, float similarity, float smoothness, float spill) {
+            mdm_setChromaKeyCamera(new Vector3D(keyColor), similarity, smoothness, spill);
+        }
+
+        public static void ClearChromaKeyCamera() {
+            mdm_setChromaKeyCamera(new Vector3D(Color.clear), 0, 0, 0);
+        }
+
+        [DllImport(LibName)] private static extern void mdm_updateVolumeInfo(Vector3D position, Vector4D rotation, Vector3D scale);
+        [DllImport(LibName)] private static extern void mdm_setVolume(float[] vertices, int vertexCount, int[] indices, int indexCount);
+        [DllImport(LibName)] private static extern void mdm_setChromaKeyCamera(Vector3D keyColor, float similarity, float smoothness, float spill);
     }
 }
