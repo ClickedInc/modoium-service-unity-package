@@ -1,3 +1,5 @@
+#if MODOIUM_PRIVATE_API
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -97,3 +99,5 @@ namespace Modoium.Service {
 #endif
     }
 }
+
+#endif
