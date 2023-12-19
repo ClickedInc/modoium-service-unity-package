@@ -43,18 +43,18 @@ namespace Modoium.Service {
     }
 
     internal class MDMInputProvider {
+        private const float TimeToWaitForEventSystem = 1.0f;
+
         private MDMService _owner;
-        private Touch[] _touchPool = new Touch[(int)MDMTouchScreenControl.TouchCount];
         private List<Touch> _touches = new List<Touch>();
+        private Dictionary<int, Touch> _fingerTouchMap = new Dictionary<int, Touch>();
+        private MDMInput _input;
+        private float _remainingToCreateEventSystem = -1.0f;
 
         internal int touchCount => _touches.Count;
 
         public MDMInputProvider(MDMService owner) {
             _owner = owner;
-
-            foreach (var index in Enumerable.Range(0, _touchPool.Length)) {
-                _touchPool[index] = new Touch();
-            }
         }
 
         public void Update() {
@@ -95,19 +95,28 @@ namespace Modoium.Service {
             if (ModoiumPlugin.IsInputActive(touchScreen, control) == false &&
                 ModoiumPlugin.GetInputDeactivated(touchScreen, control) == false) { return null; }
 
-            var touch = _touchPool[poolIndex];
-            touch.fingerId = control;
-            touch.type = TouchType.Direct;
-            touch.deltaTime = Time.deltaTime;
-
             ModoiumPlugin.GetInputTouch2D(touchScreen, control, out var position, out var state);
-            touch.position = position;
-            touch.rawPosition = position;
+
+            var touch = new Touch() {
+                fingerId = control,
+                type = TouchType.Direct,
+                deltaTime = Time.deltaTime,
+                position = position,
+                rawPosition = position
+            };
 
             if (ModoiumPlugin.GetInputActivated(touchScreen, control)) {
                 touch.phase = TouchPhase.Began;
+                retainFingerTouch(touch);
             }
             else {
+                if (state == (byte)MDMTouchPhase.Ended || state == (byte)MDMTouchPhase.Cancelled) {
+                    releaseFingerTouch(touch);
+                }
+                else {
+                    touch = updateFingerTouch(touch);
+                }
+
                 switch ((MDMTouchPhase)state) {
                     case MDMTouchPhase.Ended:
                         touch.phase = TouchPhase.Ended;
@@ -126,10 +135,30 @@ namespace Modoium.Service {
             return touch;
         }
 
-        private const float TimeToWaitForEventSystem = 1.0f;
+        private void retainFingerTouch(Touch touch) {
+            if (_fingerTouchMap.ContainsKey(touch.fingerId)) {
+                _fingerTouchMap[touch.fingerId] = touch;
+            }
+            else {
+                _fingerTouchMap.Add(touch.fingerId, touch);
+            }
+        }
 
-        private MDMInput _input;
-        private float _remainingToCreateEventSystem = -1.0f;
+        private Touch updateFingerTouch(Touch touch) {
+            if (_fingerTouchMap.ContainsKey(touch.fingerId) == false) { return touch; }
+
+            var prev = _fingerTouchMap[touch.fingerId];
+            touch.deltaPosition = touch.position - prev.position;
+            _fingerTouchMap[touch.fingerId] = touch;
+
+            return touch;
+        }
+
+        private void releaseFingerTouch(Touch touch) {
+            if (_fingerTouchMap.ContainsKey(touch.fingerId) == false) { return; }
+
+            _fingerTouchMap.Remove(touch.fingerId);
+        }
 
         private void updateLegacyInputManager() {
             if (_input != null) { return; }

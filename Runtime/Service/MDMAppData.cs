@@ -142,8 +142,6 @@ namespace Modoium.Service {
 
             Debug.Assert(dict.ContainsKey("imageattr"));
             imageattr = dict.Value<JArray>("imageattr").Select((iter) => { 
-                var dict = iter as JObject;
-
                 return new ImageAttr { 
                     x = iter.Value<int>("x"), 
                     y = iter.Value<int>("y")
