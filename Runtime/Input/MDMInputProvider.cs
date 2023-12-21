@@ -81,21 +81,26 @@ namespace Modoium.Service {
             _touches.Clear();
             if (_owner.remoteViewConnected == false) { return; }
 
+            var remoteInputDesc = _owner.remoteInputDesc;
+            var contentSize = (Display.main.renderingWidth, Display.main.renderingHeight);
+
             for (byte control = 0; control < (byte)MDMTouchScreenControl.TouchCount; control++) {
-                var touch = getTouch(control, _touches.Count);
+                var touch = getTouch(control, contentSize, remoteInputDesc);
                 if (touch == null) { continue; }
 
                 _touches.Add(touch.Value);
             }
         }
 
-        private Touch? getTouch(byte control, int poolIndex) {
+        private Touch? getTouch(byte control, (int width, int height) contentSize, MDMInputDesc remoteInputDesc) {
             var touchScreen = (byte)MDMInputDeviceID.TouchScreen;
 
             if (ModoiumPlugin.IsInputActive(touchScreen, control) == false &&
                 ModoiumPlugin.GetInputDeactivated(touchScreen, control) == false) { return null; }
 
             ModoiumPlugin.GetInputTouch2D(touchScreen, control, out var position, out var state);
+
+            position = translatePosition(position, contentSize, remoteInputDesc);
 
             var touch = new Touch() {
                 fingerId = control,
@@ -133,6 +138,32 @@ namespace Modoium.Service {
                 }
             }
             return touch;
+        }
+
+        private Vector2 translatePosition(Vector2 pos, (int width, int height) contentSize, MDMInputDesc remoteInputDesc) {
+            if (remoteInputDesc == null ||
+                (contentSize.width == remoteInputDesc.screenWidth &&
+                 contentSize.height == remoteInputDesc.screenHeight)) { return pos; }
+
+            var contentAspect = (float)contentSize.width / contentSize.height;
+            var remoteAspect = (float)remoteInputDesc.screenWidth / remoteInputDesc.screenHeight;
+
+            if (contentAspect >= remoteAspect) {
+                var scaleFromRemoteToContent = (float)contentSize.width / remoteInputDesc.screenWidth;
+                var x = pos.x * scaleFromRemoteToContent;
+                var y = pos.y * scaleFromRemoteToContent;
+
+                var offsetY = (contentSize.height - remoteInputDesc.screenHeight * scaleFromRemoteToContent) / 2.0f;
+                return new Vector2(x, y + offsetY);
+            }
+            else {
+                var scaleFromRemoteToContent = (float)contentSize.height / remoteInputDesc.screenHeight;
+                var x = pos.x * scaleFromRemoteToContent;
+                var y = pos.y * scaleFromRemoteToContent;
+
+                var offsetX = (contentSize.width - remoteInputDesc.screenWidth * scaleFromRemoteToContent) / 2.0f;
+                return new Vector2(x + offsetX, y);
+            }
         }
 
         private void retainFingerTouch(Touch touch) {

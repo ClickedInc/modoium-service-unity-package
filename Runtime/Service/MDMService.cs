@@ -29,7 +29,9 @@ namespace Modoium.Service {
         private bool coreConnected { get; set; } = false;
 
         internal MDMVideoDesc remoteViewDesc { get; private set; }
+        internal MDMInputDesc remoteInputDesc { get; private set; }
         internal bool remoteViewConnected => coreConnected && remoteViewDesc != null;
+        internal bool isAppPlaying => _app.isPlaying;
 
         public MDMService(IApplication app) {
             _app = app;
@@ -178,11 +180,13 @@ namespace Modoium.Service {
         private void setClientAppData(MDMAppData appData) {
             _clientAppData = appData;
             remoteViewDesc = appData.videoDesc;
+            remoteInputDesc = appData.inputDesc;
         }
 
         private void clearClientAppData() {
             _clientAppData = null;
             remoteViewDesc = null;
+            remoteInputDesc = null;
         }
 
         private void requestPlay() {

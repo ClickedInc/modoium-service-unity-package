@@ -39,11 +39,22 @@ namespace Modoium.Service {
             }
         }
 
-        public MDMAppData(MDMVideoDesc videoDesc) {
+        public MDMInputDesc inputDesc {
+            get {
+                foreach (var iter in medias) {
+                    if (iter is MDMInputDesc inputDesc) {
+                        return inputDesc;
+                    }
+                }
+                return null;
+            }
+        }
+
+        public MDMAppData(MDMVideoDesc videoDesc, MDMInputDesc inputDesc) {
             medias = new MDMMediaDesc[] {
                 videoDesc,
                 new MDMAudioDesc(),
-                new MDMApplicationDesc()
+                inputDesc
             };
         }
 
@@ -70,7 +81,7 @@ namespace Modoium.Service {
                 case "audio":
                     return new MDMAudioDesc(obj);
                 case "application":
-                    return new MDMApplicationDesc(obj);
+                    return MDMApplicationDesc.Parse(obj);
                 default:
                     return new MDMMediaDesc(obj);
             }
@@ -114,8 +125,10 @@ namespace Modoium.Service {
         [JsonProperty] private string direction;
         [JsonProperty] private Xfmtp xfmtp;
 
-        internal int width => imageattr[0].x;
-        internal int height => imageattr[0].y;
+        internal int contentWidth => imageattr[0].width;
+        internal int contentHeight => imageattr[0].height;
+        internal int videoWidth => imageattr[0].x;
+        internal int videoHeight => imageattr[0].y;
         internal float framerate => frameRate;
         internal long bitrate => bitRate.max;
         internal string[] codecs => accept;
@@ -124,11 +137,12 @@ namespace Modoium.Service {
         internal MDMVideoDesc(string[] codecs, 
                               int width, 
                               int height, 
+                              float sampleAspect,
                               float framerate,
                               long startBitrate,
                               long maxBitrate) : base("video", codecs) { 
             imageattr = new ImageAttr[] {
-                new ImageAttr { x = width, y = height }
+                new ImageAttr { x = width, y = height, sar = sampleAspect }
             };
             frameRate = framerate;
             bitRate = new Bitrate { start = startBitrate, max = maxBitrate };
@@ -144,7 +158,8 @@ namespace Modoium.Service {
             imageattr = dict.Value<JArray>("imageattr").Select((iter) => { 
                 return new ImageAttr { 
                     x = iter.Value<int>("x"), 
-                    y = iter.Value<int>("y")
+                    y = iter.Value<int>("y"),
+                    sar = iter.Value<float>("sar")
                 }; 
             }).ToArray();
 
@@ -172,6 +187,10 @@ namespace Modoium.Service {
         private struct ImageAttr {
             [JsonProperty] public int x;
             [JsonProperty] public int y;
+            [JsonProperty] public float sar;
+
+            public int width => x;
+            public int height => sar > 0 && sar != 1 ? Mathf.RoundToInt(y / sar) : y;
         }
 
         [JsonObject(MemberSerialization.OptIn)]
@@ -193,11 +212,12 @@ namespace Modoium.Service {
         public MDMStereoVideoDesc(string[] codecs, 
                                   int width, 
                                   int height, 
+                                  float sampleAspect,
                                   float framerate,
                                   long startBitrate,
                                   long maxBitrate,
                                   Vector4 leftEyeProjection,
-                                  float ipd) : base(codecs, width, height, framerate, startBitrate, maxBitrate) { 
+                                  float ipd) : base(codecs, width, height, sampleAspect, framerate, startBitrate, maxBitrate) { 
             stereoscopy = new Stereoscopy { 
                 leftEyeProjection = new float[] { leftEyeProjection.x, leftEyeProjection.y, leftEyeProjection.z, leftEyeProjection.w },
                 ipd = ipd
@@ -230,10 +250,11 @@ namespace Modoium.Service {
         public MDMMonoVideoDesc(string[] codecs, 
                                 int width, 
                                 int height, 
+                                float sampleAspect,
                                 float framerate,
                                 long startBitrate,
                                 long maxBitrate,
-                                Vector4 cameraProjection) : base(codecs, width, height, framerate, startBitrate, maxBitrate) {
+                                Vector4 cameraProjection) : base(codecs, width, height, sampleAspect, framerate, startBitrate, maxBitrate) {
             monoscopy = new Monoscopy {
                 cameraProjection = new float[] { cameraProjection.x, cameraProjection.y, cameraProjection.z, cameraProjection.w }
             };
@@ -265,8 +286,39 @@ namespace Modoium.Service {
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    internal class MDMApplicationDesc : MDMMediaDesc {
-        public MDMApplicationDesc() : base("application", new string[] { "onairxr-input" }) {}
-        public MDMApplicationDesc(object obj) : base(obj) {}
+    public class MDMApplicationDesc : MDMMediaDesc {
+        internal static new MDMApplicationDesc Parse(object obj) {
+            var dict = obj as JObject;
+        
+            if (dict.Value<JArray>("accept").Any((iter) => iter.ToObject<string>() == "onairxr-input")) {
+                return new MDMInputDesc(obj);
+            }
+            return new MDMApplicationDesc(obj);
+        }
+
+        internal MDMApplicationDesc(string[] accept) : base("application", accept) {}
+        internal MDMApplicationDesc(object obj) : base(obj) {}
+    }
+
+    [JsonObject(MemberSerialization.OptIn)]
+    public class MDMInputDesc : MDMApplicationDesc {
+        [JsonProperty] public int screenWidth;
+        [JsonProperty] public int screenHeight;
+
+        public MDMInputDesc(int screenWidth, int screenHeight) : base(new string[] { "onairxr-input" }) {
+            this.screenWidth = screenWidth;
+            this.screenHeight = screenHeight;
+        }
+
+        public MDMInputDesc(object obj) : base(obj) {
+            Debug.Assert(obj is JObject);
+            var dict = obj as JObject;
+
+            Debug.Assert(dict.ContainsKey("screenWidth"));
+            screenWidth = dict.Value<int>("screenWidth");
+
+            Debug.Assert(dict.ContainsKey("screenHeight"));
+            screenHeight = dict.Value<int>("screenHeight");
+        }
     }
 }

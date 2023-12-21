@@ -11,6 +11,7 @@ namespace Modoium.Service {
         private MonoBehaviour _driver;
         private CommandBuffer _commandBuffer;
         private SwapChain _swapChain;
+        private Material _blitMaterial;
         private bool _running;
 
         public MDMDisplayRenderer(MonoBehaviour driver = null) {
@@ -22,7 +23,11 @@ namespace Modoium.Service {
             if (ModoiumPlugin.isXR || _running) { return; }
             _running = true;
 
-            _swapChain = new SwapChain(displayConfig);
+            if (_blitMaterial == null) {
+                _blitMaterial = new Material(Shader.Find("Modoium/Fullscreen Blit"));
+            }
+            _swapChain = new SwapChain(displayConfig, _blitMaterial);
+            
             startCoroutine(renderLoop());
         }
 
@@ -45,8 +50,8 @@ namespace Modoium.Service {
                 }
 
                 ModoiumPlugin.RenderPreRender(_commandBuffer);
-                _swapChain.CopyFrameBuffer(_commandBuffer, out var framebufferIndex);
-                ModoiumPlugin.RenderPostRender(_commandBuffer, framebufferIndex);
+                _swapChain.CopyFrameBuffer(_commandBuffer, out var framebufferIndex, out var aspect);
+                ModoiumPlugin.RenderPostRender(_commandBuffer, framebufferIndex, aspect);
 
                 flushCommandBuffer(_commandBuffer);
             }
@@ -73,6 +78,7 @@ namespace Modoium.Service {
         private class SwapChain {
             private const int Length = 4;
 
+            private Material _blitMaterial;
             private RenderTexture[] _textures;
             private FramebufferArray _framebufferArray;
             private int _cursor;
@@ -89,7 +95,8 @@ namespace Modoium.Service {
                 }
             }
 
-            public SwapChain(MDMVideoDesc displayConfig) {
+            public SwapChain(MDMVideoDesc displayConfig, Material blitMaterial) {
+                _blitMaterial = blitMaterial;
                 _textures = new RenderTexture[Length];
                 _framebufferArray = new FramebufferArray(Length);
                 nativeFramebufferArray = Marshal.AllocHGlobal(_framebufferArray.count * IntPtr.Size + sizeof(int));
@@ -97,10 +104,20 @@ namespace Modoium.Service {
                 reallocate(displayConfig);
             }
 
-            public void CopyFrameBuffer(CommandBuffer commandBuffer, out int framebufferIndex) {
-                commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, _textures[_cursor]);
-                framebufferIndex = _cursor;
+            public void CopyFrameBuffer(CommandBuffer commandBuffer, out int framebufferIndex, out float aspect) {
+                var displaySize = (Display.main.renderingWidth, Display.main.renderingHeight);
+                var texture = _textures[_cursor];
 
+                if (displaySize.renderingWidth == texture.width && displaySize.renderingHeight == texture.height) {
+                    aspect = 0;
+                    commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, texture);
+                }
+                else {
+                    aspect = (float)displaySize.renderingWidth / displaySize.renderingHeight;
+                    commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, texture, _blitMaterial);
+                }
+
+                framebufferIndex = _cursor;
                 _cursor = (_cursor + 1) % _textures.Length;
             }
 
@@ -129,7 +146,7 @@ namespace Modoium.Service {
             }
 
             private RenderTexture createTexture(MDMVideoDesc displayConfig) {
-                var texture = new RenderTexture(displayConfig.width, displayConfig.height, 0, RenderTextureFormat.BGRA32) {
+                var texture = new RenderTexture(displayConfig.videoWidth, displayConfig.videoHeight, 0, RenderTextureFormat.BGRA32) {
                     useMipMap = false,
                     autoGenerateMips = false,
                     filterMode = FilterMode.Bilinear,

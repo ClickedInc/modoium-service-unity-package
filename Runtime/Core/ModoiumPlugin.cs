@@ -119,8 +119,11 @@ namespace Modoium.Service {
             commandBuffer.IssuePluginEvent(mdm_preRender_renderThread_func(), 0);
         }
 
-        public static void RenderPostRender(CommandBuffer commandBuffer, int framebufferIndex) {
-            commandBuffer.IssuePluginEvent(mdm_postRender_renderThread_func(), framebufferIndex);
+        public static void RenderPostRender(CommandBuffer commandBuffer, int framebufferIndex, float aspect) {
+            var framebufferIndexMask = framebufferIndex << 26;
+            var aspectMask = (int)(aspect * 10000000);
+            
+            commandBuffer.IssuePluginEvent(mdm_postRender_renderThread_func(), framebufferIndexMask | aspectMask);
         }
 
         public static void RenderCleanup(CommandBuffer commandBuffer) {

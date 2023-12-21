@@ -13,7 +13,7 @@ namespace Modoium.Service {
         private const string KeyOriginalSizeLabel = "com.modoium.remote.originalSizeLabel";
 
         private MDMService _owner;
-        private bool _syncedToRemote;
+        private bool _remoteConnected;
         private string _originalSizeLabelCached;
 
         private string originalSizeLabel {
@@ -43,6 +43,7 @@ namespace Modoium.Service {
         private Type _typeGameView;
         private MethodInfo _methodGetMainPlayModeView;
         private Vector2Int _lastRemoteViewSize;
+        private bool _isFirstUpdate = true;
 
         private EditorWindow mainGameView {
             get {
@@ -73,41 +74,75 @@ namespace Modoium.Service {
         }
 
         public void Update() {
-            if (ModoiumPlugin.isXR) { return; }
+            if (ModoiumPlugin.isXR || checkIfIsFirstUpdate()) { return; }
 
             if (_owner.remoteViewConnected) {
-                var remoteView = _owner.remoteViewDesc;
-
-                if (_syncedToRemote) {
-                    if (remoteView.width == _lastRemoteViewSize.x &&
-                        remoteView.height == _lastRemoteViewSize.y) { return; }
-
-                    syncGameViewToRemote(remoteView.width, remoteView.height);
-
-                    _lastRemoteViewSize.x = remoteView.width;
-                    _lastRemoteViewSize.y = remoteView.height;
+                if (_remoteConnected) {
+                    handleRemoteViewSizeChange();
                 }
                 else {
-                    var currentSizeLabel = sizeLabel(currentSize);
-                    
-                    if (currentSizeLabel != RemoteSizeLabel) { 
-                        originalSizeLabel = currentSizeLabel;
-                    }
-
-                    syncGameViewToRemote(remoteView.width, remoteView.height);
-
-                    _lastRemoteViewSize.x = remoteView.width;
-                    _lastRemoteViewSize.y = remoteView.height;
+                    setToRemoteViewSize();
                 }
             }
-            else if (_syncedToRemote) {
-                selectSize(findSizeFromLabel(originalSizeLabel));
-
-                _lastRemoteViewSize.x = 0;
-                _lastRemoteViewSize.y = 0;
+            else if (_remoteConnected) {
+                returnToOriginalSize();
             }
 
-            _syncedToRemote = _owner.remoteViewConnected;
+            _remoteConnected = _owner.remoteViewConnected;
+        }
+
+        private bool checkIfIsFirstUpdate() {
+            // NOTE: must handle the first update due to reconstruction on editor play/stop
+            if (_isFirstUpdate == false) { return false; }
+
+            // restore states on reconstruction (even though it might not be correct)
+            _remoteConnected = _owner.remoteViewConnected;
+            if (_remoteConnected) {
+                var remoteView = _owner.remoteViewDesc;
+                _lastRemoteViewSize.x = remoteView.contentWidth;
+                _lastRemoteViewSize.y = remoteView.contentHeight;
+            }
+
+            _isFirstUpdate = false;
+            return true;
+        }
+
+        private void handleRemoteViewSizeChange() {
+            if (_owner.isAppPlaying) { return; }
+
+            var remoteView = _owner.remoteViewDesc;
+            if (remoteView.contentWidth == _lastRemoteViewSize.x &&
+                remoteView.contentHeight == _lastRemoteViewSize.y) { return; }
+
+            var currentSizeLabel = sizeLabel(currentSize);
+            syncGameViewToRemote(remoteView.contentWidth, remoteView.contentHeight, currentSizeLabel == RemoteSizeLabel);
+
+            _lastRemoteViewSize.x = remoteView.contentWidth;
+            _lastRemoteViewSize.y = remoteView.contentHeight;
+        }
+
+        private void setToRemoteViewSize() {
+            var remoteView = _owner.remoteViewDesc;
+
+            var currentSizeLabel = sizeLabel(currentSize);
+            if (currentSizeLabel != RemoteSizeLabel) { 
+                originalSizeLabel = currentSizeLabel;
+            }
+
+            syncGameViewToRemote(remoteView.contentWidth, remoteView.contentHeight, true);
+
+            _lastRemoteViewSize.x = remoteView.contentWidth;
+            _lastRemoteViewSize.y = remoteView.contentHeight;
+        }
+
+        private void returnToOriginalSize() {
+            var currentSizeLabel = sizeLabel(currentSize);
+            if (currentSizeLabel == RemoteSizeLabel) { 
+                selectSize(findSizeFromLabel(originalSizeLabel));
+            }
+
+            _lastRemoteViewSize.x = 0;
+            _lastRemoteViewSize.y = 0;
         }
 
         private void init() {
@@ -117,7 +152,7 @@ namespace Modoium.Service {
             _methodGetMainPlayModeView = _typeGameView.GetMethod("GetMainPlayModeView", BindingFlags.NonPublic | BindingFlags.Static);
         }
 
-        private void syncGameViewToRemote(int width, int height) {
+        private void syncGameViewToRemote(int width, int height, bool select) {
             if (width <= 0 || height <= 0) { return; }
 
             var size = findRemoteSize();
@@ -135,7 +170,9 @@ namespace Modoium.Service {
                 method.Invoke(group, new[] { size });
             }
 
-            selectSize(size);
+            if (select) {
+                selectSize(size);
+            }
         }
 
         private void selectSize(object size) {
@@ -147,6 +184,9 @@ namespace Modoium.Service {
 
             var method = gameView.GetType().GetMethod("SizeSelectionCallback", BindingFlags.Public | BindingFlags.Instance);
             method.Invoke(gameView, new[] { index, size });
+
+            method = gameView.GetType().GetMethod("Repaint", BindingFlags.Public | BindingFlags.Instance);
+            method.Invoke(gameView, new object[] { });
         }
 
         private int sizeIndex(object size) {
