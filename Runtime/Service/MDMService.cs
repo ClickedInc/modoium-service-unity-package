@@ -193,6 +193,12 @@ namespace Modoium.Service {
             Debug.Assert(_clientAppData != null);
             var settings = ModoiumSettings.instance;
 
+            var isXR = ModoiumPlugin.isXR;
+            if ((_clientAppData.videoDesc is MDMStereoVideoDesc) != isXR) { 
+                Debug.LogWarning($"[Modoium Remote] the connected client does not support {(isXR ? "XR" : "non-XR")} content.");
+                return; 
+            }
+
             ModoiumPlugin.Play(JsonConvert.SerializeObject(_clientAppData),
                                settings.idleFrameRate,
                                MaxFrameRate,
