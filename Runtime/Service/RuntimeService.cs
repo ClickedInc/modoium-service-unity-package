@@ -1,12 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Modoium.Service {
-    public class MDMRuntimeService : MonoBehaviour, MDMService.IApplication {
-        public static MDMRuntimeService instance { get; private set; }
+    public class RuntimeService : MonoBehaviour, MDMService.IApplication {
+        public static RuntimeService instance { get; private set; }
 
         internal static async void LoadOnce() {
             if (instance != null) { return; }
@@ -21,7 +19,7 @@ namespace Modoium.Service {
             };
             DontDestroyOnLoad(go);
 
-            instance = go.AddComponent<MDMRuntimeService>();
+            instance = go.AddComponent<RuntimeService>();
         }
 
         private MDMService _service;

@@ -21,7 +21,7 @@ namespace Modoium.Service {
 #endif
 
             if (Application.isEditor == false) {
-                MDMRuntimeService.LoadOnce();
+                RuntimeService.LoadOnce();
             }
 
             CreateSubsystem<XRDisplaySubsystemDescriptor, XRDisplaySubsystem>(_displaySubsystemDescriptors, "Modoium Display");

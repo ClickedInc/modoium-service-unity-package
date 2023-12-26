@@ -13,13 +13,15 @@ namespace Modoium.Service.Editor {
         public IXRPackageMetadata metadata => _metadata;
 
         public bool PopulateNewSettingsInstance(ScriptableObject obj) {
-            return false;
+            var settings = obj as ModoiumXRSettings;
+
+            return settings != null;
         }
 
         private class ModoiumPackageMetadata : IXRPackageMetadata {
             public string packageName => "Modoium";
             public string packageId => "com.modoium.service";
-            public string settingsType => "Modoium.Service.ModoiumSettings";
+            public string settingsType => "Modoium.Service.ModoiumXRSettings";
             
             private static readonly List<IXRLoaderMetadata> _loaderMetadata = new List<IXRLoaderMetadata>() { new ModoiumLoaderMetadata() };
             public List<IXRLoaderMetadata> loaderMetadata => _loaderMetadata;

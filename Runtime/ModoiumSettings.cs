@@ -15,8 +15,6 @@ namespace Modoium.Service {
     }
 
     public class ModoiumSettings : ScriptableObject {
-        internal const string SettingsKey = "com.modoium.service.settings";
-
         internal const string AssetDir = "Assets/Modoium";
         internal const string AssetPath = "Assets/Modoium/ModoiumSettings.asset";
 

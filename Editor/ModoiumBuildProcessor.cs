@@ -10,11 +10,11 @@ namespace Modoium.Service.Editor {
 
         void IPreprocessBuildWithReport.OnPreprocessBuild(BuildReport report) {
             removeSettingsFromPreloadAssets<ModoiumSettings>();
-            addSettingsToPreloadAssets<ModoiumSettings>(ModoiumSettings.SettingsKey);
+            addSettingsToPreloadAssets<ModoiumSettings>(ModoiumSettings.AssetPath);
             
 #if UNITY_XR_MANAGEMENT
             removeSettingsFromPreloadAssets<ModoiumXRSettings>();
-            addSettingsToPreloadAssets<ModoiumXRSettings>(ModoiumXRSettings.SettingsKey);
+            addSettingsAsConfigObjectToPreloadAssets<ModoiumXRSettings>(ModoiumXRSettings.SettingsKey);
 #endif
         }
 
@@ -26,7 +26,19 @@ namespace Modoium.Service.Editor {
 #endif
         }
 
-        private void addSettingsToPreloadAssets<T>(string key) where T : UnityEngine.Object {
+        private void addSettingsToPreloadAssets<T>(string path) where T : UnityEngine.Object {
+            var settings = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (settings == null) { return; }
+
+            var preloadedAssets = PlayerSettings.GetPreloadedAssets();
+            if (preloadedAssets.Contains(settings) == false) {
+                var assets = preloadedAssets.ToList();
+                assets.Add(settings);
+                PlayerSettings.SetPreloadedAssets(assets.ToArray());
+            }
+        }
+
+        private void addSettingsAsConfigObjectToPreloadAssets<T>(string key) where T : UnityEngine.Object {
             EditorBuildSettings.TryGetConfigObject(key, out T settings);
             if (settings == null) { return; }
 
