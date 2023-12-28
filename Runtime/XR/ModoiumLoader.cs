@@ -20,10 +20,6 @@ namespace Modoium.Service {
             MDMInputLayoutLoader.RegisterInputLayouts();
 #endif
 
-            if (Application.isEditor == false) {
-                RuntimeService.LoadOnce();
-            }
-
             CreateSubsystem<XRDisplaySubsystemDescriptor, XRDisplaySubsystem>(_displaySubsystemDescriptors, "Modoium Display");
             CreateSubsystem<XRInputSubsystemDescriptor, XRInputSubsystem>(_inputSubsystemDescriptors, "Modoium Input");
             return true;

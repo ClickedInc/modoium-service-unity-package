@@ -240,8 +240,46 @@ namespace Modoium.Service {
             return size;
         }
 #else
-        public void Update() {}
+        private Vector2Int _lastRemoteViewSize;
+
         private void init() {}
+
+        public void Update() {
+            if (ModoiumPlugin.isXR) { return; }
+
+            if (_owner.remoteViewConnected) {
+                if (_remoteConnected) {
+                    handleRemoteViewSizeChange();
+                }
+                else {
+                    setToRemoteViewSize();
+                }
+            }
+
+            _remoteConnected = _owner.remoteViewConnected;
+        }
+
+        private void handleRemoteViewSizeChange() {
+            if (_owner.isAppPlaying) { return; }
+
+            var remoteView = _owner.remoteViewDesc;
+            if (remoteView.contentWidth == _lastRemoteViewSize.x &&
+                remoteView.contentHeight == _lastRemoteViewSize.y) { return; }
+
+            Screen.SetResolution(remoteView.contentWidth, remoteView.contentHeight, Screen.fullScreen);
+
+            _lastRemoteViewSize.x = remoteView.contentWidth;
+            _lastRemoteViewSize.y = remoteView.contentHeight;
+        }
+
+        private void setToRemoteViewSize() {
+            var remoteView = _owner.remoteViewDesc;
+
+            Screen.SetResolution(remoteView.contentWidth, remoteView.contentHeight, Screen.fullScreen);
+
+            _lastRemoteViewSize.x = remoteView.contentWidth;
+            _lastRemoteViewSize.y = remoteView.contentHeight;
+        }
 #endif        
     }
 }

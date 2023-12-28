@@ -6,43 +6,45 @@ namespace Modoium.Service {
     public class RuntimeService : MonoBehaviour, MDMService.IApplication {
         public static RuntimeService instance { get; private set; }
 
-        internal static async void LoadOnce() {
-            if (instance != null) { return; }
-
-            // NOTE: wait until the first scene is loaded to avoid AXRServer from being destroyed.
-            if (Application.isEditor == false && SceneManager.GetActiveScene().isLoaded == false) {
-                await Task.Yield();
-            }
-
-            var go = new GameObject("ModoiumService") {
-                hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector
-            };
-            DontDestroyOnLoad(go);
-
-            instance = go.AddComponent<RuntimeService>();
-        }
-
         private MDMService _service;
 
         private void Awake() {
+            if (instance != null) {
+                Destroy(gameObject);
+                return;
+            }
+
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+            
+            if (Application.isEditor) { return; }
+            
             _service = new MDMService(this);
         }
 
         private void Start() {
+            if (Application.isEditor) { return; }
+
             _service.Startup();
         }
 
         private void Update() {
+            if (Application.isEditor) { return; }
+
             _service.Update();
         }
 
         private void OnApplicationQuit() {
+            if (Application.isEditor) { return; }
+            
             if (instance != null) {
                 Destroy(instance.gameObject);
             }
         }
 
         private void OnDestroy() {
+            if (Application.isEditor) { return; }
+
             _service.Shutdown();
             
             instance = null;
