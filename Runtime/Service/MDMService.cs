@@ -25,8 +25,9 @@ namespace Modoium.Service {
         private MDMDisplayRenderer _displayRenderer;
         private MDMDisplayConfigurator _displayConfigurator;
         private MDMInputProvider _inputProvider;
+        private float _timeToReopenService = -1f;
 
-        private bool coreConnected { get; set; } = false;
+        private bool coreConnected => ModoiumPlugin.GetServiceState() == MDMServiceState.Ready;
 
         internal MDMVideoDesc remoteViewDesc { get; private set; }
         internal MDMInputDesc remoteInputDesc { get; private set; }
@@ -78,6 +79,8 @@ namespace Modoium.Service {
             _messageDispatcher.Dispatch();
             _inputProvider.Update();
 
+            updateReopenService();
+
             if (coreConnected) {
                 _displayConfigurator.Update();
             }
@@ -93,6 +96,23 @@ namespace Modoium.Service {
             if (_audioListener == null) {
                 _audioListener = audioListener.gameObject.AddComponent<MDMAudioListener>();
             }
+        }
+
+        private void updateReopenService() {
+            if (ModoiumPlugin.GetServiceState() != MDMServiceState.Disconnected) {
+                _timeToReopenService = -1f;
+                return;
+            }
+
+            if (_timeToReopenService < 0f) { 
+                _timeToReopenService = Time.realtimeSinceStartup + 0.5f;
+            }
+            if (Time.realtimeSinceStartup < _timeToReopenService) { return; }
+
+            var settings = ModoiumSettings.instance;
+            ModoiumPlugin.ReopenService(settings.serviceName, settings.serviceUserdata);
+
+            _timeToReopenService = -1f;
         }
 
         private void onMDMMessageReceived(MDMMessage message) {
@@ -123,7 +143,7 @@ namespace Modoium.Service {
         }
 
         private void onCoreConnected(MDMMessageCoreConnected message) {
-            coreConnected = true;
+            // do nothing
         }
 
         private void onCoreConnectionFailed(MDMMessageCoreConnectionFailed message) {
@@ -131,15 +151,10 @@ namespace Modoium.Service {
             if (failureCode != MDMFailureCode.CoreNotFound) {
                 Debug.LogWarning($"[modoium] core connection failed: {failureCode} (status code {message.statusCode}): {message.reason}");
             }
-
-            tryReopenService();
         }
 
         private void onCoreDisconnected(MDMMessageCoreDisconnected message) {
-            coreConnected = false;
             clearClientAppData();
-
-            tryReopenService();
         }
 
         private void onSessionInitiated(MDMMessageSessionInitiated message) {
@@ -167,14 +182,6 @@ namespace Modoium.Service {
 
         private void onClientAppData(MDMMessageClientAppData message) {
             setClientAppData(message.appData);
-        }
-        
-        private async void tryReopenService() {
-            var settings = ModoiumSettings.instance;
-
-            await Task.Delay(TimeSpan.FromSeconds(0.2));
-
-            ModoiumPlugin.ReopenService(settings.serviceName, settings.serviceUserdata);
         }
 
         private void setClientAppData(MDMAppData appData) {

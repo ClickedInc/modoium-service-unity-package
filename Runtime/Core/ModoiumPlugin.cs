@@ -15,6 +15,13 @@ using UnityEditor;
 #endif
 
 namespace Modoium.Service {
+    internal enum MDMServiceState {
+        Idle = 0,
+        Disconnected,
+        Connecting,
+        Ready
+    }
+
     internal static class ModoiumPlugin {
         private const string LibName = "modoium";
 
@@ -46,6 +53,8 @@ namespace Modoium.Service {
 
         [DllImport(LibName, EntryPoint = "mdm_shutdownService")]
         public static extern void ShutdownService();
+
+        public static MDMServiceState GetServiceState() => (MDMServiceState)mdm_getServiceState();
 
         [DllImport(LibName, EntryPoint = "mdm_reopenService")]
         public static extern void ReopenService(string serviceName, string userdata);
@@ -130,6 +139,7 @@ namespace Modoium.Service {
             commandBuffer.IssuePluginEvent(mdm_cleanup_renderThread_func(), 0);
         }
 
+        [DllImport(LibName)] private static extern int mdm_getServiceState();
         [DllImport(LibName)] private static extern IntPtr mdm_init_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_update_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_framebuffersReallocated_renderThread_func();
