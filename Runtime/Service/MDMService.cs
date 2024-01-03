@@ -23,7 +23,7 @@ namespace Modoium.Service {
         private MDMAudioListener _audioListener;
         private MDMAppData _clientAppData;
         private MDMDisplayRenderer _displayRenderer;
-        private MDMGameViewConfigurator _gameViewConfigurator;
+        private MDMDisplayConfigurator _displayConfigurator;
         private MDMInputProvider _inputProvider;
 
         private bool coreConnected { get; set; } = false;
@@ -37,7 +37,7 @@ namespace Modoium.Service {
             _app = app;
             _messageDispatcher = new MDMMessageDispatcher();
             _displayRenderer = new MDMDisplayRenderer(app as MonoBehaviour);
-            _gameViewConfigurator = new MDMGameViewConfigurator(this);
+            _displayConfigurator = new MDMDisplayConfigurator(this);
             _inputProvider = new MDMInputProvider(this);
  
             _messageDispatcher.onMessageReceived += onMDMMessageReceived;
@@ -79,7 +79,7 @@ namespace Modoium.Service {
             _inputProvider.Update();
 
             if (coreConnected) {
-                _gameViewConfigurator.Update();
+                _displayConfigurator.Update();
             }
         }
 

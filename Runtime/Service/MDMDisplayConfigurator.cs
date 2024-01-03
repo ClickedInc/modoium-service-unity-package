@@ -9,7 +9,7 @@ using UnityEditor;
 #endif
 
 namespace Modoium.Service {
-    internal class MDMGameViewConfigurator {
+    internal class MDMDisplayConfigurator {
         private const string KeyOriginalSizeLabel = "com.modoium.remote.originalSizeLabel";
 
         private MDMService _owner;
@@ -31,7 +31,7 @@ namespace Modoium.Service {
             }
         }
 
-        public MDMGameViewConfigurator(MDMService owner) {
+        public MDMDisplayConfigurator(MDMService owner) {
             _owner = owner;
 
             init();
@@ -266,7 +266,7 @@ namespace Modoium.Service {
             if (remoteView.contentWidth == _lastRemoteViewSize.x &&
                 remoteView.contentHeight == _lastRemoteViewSize.y) { return; }
 
-            Screen.SetResolution(remoteView.contentWidth, remoteView.contentHeight, Screen.fullScreen);
+            setScreenResolution(remoteView.contentWidth, remoteView.contentHeight);
 
             _lastRemoteViewSize.x = remoteView.contentWidth;
             _lastRemoteViewSize.y = remoteView.contentHeight;
@@ -275,10 +275,14 @@ namespace Modoium.Service {
         private void setToRemoteViewSize() {
             var remoteView = _owner.remoteViewDesc;
 
-            Screen.SetResolution(remoteView.contentWidth, remoteView.contentHeight, Screen.fullScreen);
+            setScreenResolution(remoteView.contentWidth, remoteView.contentHeight);
 
             _lastRemoteViewSize.x = remoteView.contentWidth;
             _lastRemoteViewSize.y = remoteView.contentHeight;
+        }
+
+        private void setScreenResolution(int width, int height) {
+            Screen.SetResolution(width, height, Screen.fullScreen);
         }
 #endif        
     }

@@ -80,6 +80,7 @@ namespace Modoium.Service {
 
             private Material _blitMaterial;
             private RenderTexture[] _textures;
+            private RenderTexture _blitBufferTexture;
             private FramebufferArray _framebufferArray;
             private int _cursor;
             private bool _reallocated;
@@ -114,7 +115,14 @@ namespace Modoium.Service {
                 }
                 else {
                     aspect = (float)displaySize.renderingWidth / displaySize.renderingHeight;
-                    commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, texture, _blitMaterial);
+
+                    if (_blitBufferTexture != null) {
+                        commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, _blitBufferTexture);
+                        commandBuffer.Blit(_blitBufferTexture, texture, _blitMaterial);
+                    }
+                    else {
+                        commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, texture, _blitMaterial);
+                    }
                 }
 
                 framebufferIndex = _cursor;
@@ -127,6 +135,9 @@ namespace Modoium.Service {
                     _textures[index] = null;
                 }
 
+                _blitBufferTexture?.Release();
+                _blitBufferTexture = null;
+
                 Marshal.DestroyStructure(nativeFramebufferArray, typeof(FramebufferArray));
                 Marshal.FreeHGlobal(nativeFramebufferArray);
             }
@@ -135,18 +146,23 @@ namespace Modoium.Service {
                 for (var index = 0; index < _textures.Length; index++) {
                     _textures[index]?.Release();
 
-                    _textures[index] = createTexture(displayConfig);
+                    _textures[index] = createTexture(displayConfig.videoWidth, displayConfig.videoHeight);
                     _framebufferArray.framebuffers[index] = _textures[index].GetNativeTexturePtr();
                 }
 
                 Marshal.StructureToPtr(_framebufferArray, nativeFramebufferArray, false);
 
+                // workaround: blitting framebuffer to render texture with material does not work, so should use buffer texture
+                if (Application.isEditor == false) {
+                    _blitBufferTexture = createTexture(displayConfig.contentWidth, displayConfig.contentHeight);
+                }
+
                 _cursor = 0;
                 _reallocated = true;
             }
 
-            private RenderTexture createTexture(MDMVideoDesc displayConfig) {
-                var texture = new RenderTexture(displayConfig.videoWidth, displayConfig.videoHeight, 0, RenderTextureFormat.BGRA32) {
+            private RenderTexture createTexture(int width, int height) {
+                var texture = new RenderTexture(width, height, 0, RenderTextureFormat.BGRA32) {
                     useMipMap = false,
                     autoGenerateMips = false,
                     filterMode = FilterMode.Bilinear,
