@@ -75,26 +75,15 @@ namespace Modoium.Service {
             get {
                 var value = _advancedSettingsEnabled ? _displayTextureColorSpaceHint : MDMTextureColorSpaceHint.None;
                 if (value != MDMTextureColorSpaceHint.None) { return value; }
+                else if (ModoiumPlugin.isXR == false) { return MDMTextureColorSpaceHint.Gamma; }
 
-                if (ModoiumPlugin.isXR) {
-                    if (IsUniversalRenderPipeline()) {
-                        // workaround: URP uses always non-sRGB texture even if color space is set to linear. (but xr plugin misleads as if it were sRGB.)
-                        value = MDMTextureColorSpaceHint.Gamma;
-                    }
-                    else if (IsHDRenderPipeline() && QualitySettings.activeColorSpace == ColorSpace.Gamma) {
-                        // workaround: On HDRP, xr plugin misleads as if texture were sRGB even when color space is set to gamma.
-                        value = MDMTextureColorSpaceHint.Gamma;
-                    }
+                if (IsUniversalRenderPipeline()) {
+                    // workaround: URP uses always non-sRGB texture even if color space is set to linear. (but xr plugin misleads as if it were sRGB.)
+                    value = MDMTextureColorSpaceHint.Gamma;
                 }
-                else {
-                    if (IsUniversalRenderPipeline()) {
-                        // workaround: URP uses always non-sRGB texture even if color space is set to linear. (but xr plugin misleads as if it were sRGB.)
-                        value = MDMTextureColorSpaceHint.Gamma;
-                    }
-                    else {
-                        value = QualitySettings.activeColorSpace == ColorSpace.Linear ? MDMTextureColorSpaceHint.Linear : 
-                                                                                        MDMTextureColorSpaceHint.Gamma;
-                    }
+                else if (IsHDRenderPipeline() && QualitySettings.activeColorSpace == ColorSpace.Gamma) {
+                    // workaround: On HDRP, xr plugin misleads as if texture were sRGB even when color space is set to gamma.
+                    value = MDMTextureColorSpaceHint.Gamma;
                 }
                 return value;
             }
