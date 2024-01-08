@@ -29,7 +29,7 @@ namespace Modoium.Service {
                     phase = parsePhase(touch.phase),
                     position = touch.position,
                     pressure = 1.0f,
-                    radius = new Vector2(8.0f, 8.0f)
+                    radius = new Vector2(1.0f, 1.0f)
                 });
             }   
         }

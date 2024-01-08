@@ -10,6 +10,8 @@ namespace Modoium.Service {
 
         private MDMInputProvider _inputProvider;
 
+        public bool touchPressureSupported => false;
+
         public override bool touchSupported => true;
         public override int touchCount => _inputProvider?.touchCount ?? 0;
         public override Touch GetTouch(int index) => _inputProvider.GetTouch(index).Value;
@@ -107,7 +109,12 @@ namespace Modoium.Service {
                 type = TouchType.Direct,
                 deltaTime = Time.deltaTime,
                 position = position,
-                rawPosition = position
+                radius = 1,
+                radiusVariance = 0,
+                pressure = 1,
+                maximumPossiblePressure = 1,
+                altitudeAngle = 0,
+                azimuthAngle = 0
             };
 
             if (ModoiumPlugin.GetInputActivated(touchScreen, control)) {
@@ -116,7 +123,7 @@ namespace Modoium.Service {
             }
             else {
                 if (state == (byte)MDMTouchPhase.Ended || state == (byte)MDMTouchPhase.Cancelled) {
-                    releaseFingerTouch(touch);
+                    touch = releaseFingerTouch(touch);
                 }
                 else {
                     touch = updateFingerTouch(touch);
@@ -167,6 +174,8 @@ namespace Modoium.Service {
         }
 
         private void retainFingerTouch(Touch touch) {
+            touch.rawPosition = touch.position;
+
             if (_fingerTouchMap.ContainsKey(touch.fingerId)) {
                 _fingerTouchMap[touch.fingerId] = touch;
             }
@@ -180,15 +189,19 @@ namespace Modoium.Service {
 
             var prev = _fingerTouchMap[touch.fingerId];
             touch.deltaPosition = touch.position - prev.position;
+            touch.rawPosition = prev.rawPosition;
             _fingerTouchMap[touch.fingerId] = touch;
 
             return touch;
         }
 
-        private void releaseFingerTouch(Touch touch) {
-            if (_fingerTouchMap.ContainsKey(touch.fingerId) == false) { return; }
+        private Touch releaseFingerTouch(Touch touch) {
+            if (_fingerTouchMap.ContainsKey(touch.fingerId) == false) { return touch; }
 
+            touch.rawPosition = _fingerTouchMap[touch.fingerId].rawPosition;
             _fingerTouchMap.Remove(touch.fingerId);
+
+            return touch;
         }
 
         private void updateLegacyInputManager() {

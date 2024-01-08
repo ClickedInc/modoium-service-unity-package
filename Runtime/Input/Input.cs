@@ -19,7 +19,7 @@ namespace Modoium.Service {
             get {
                 if (MDMInput.instance == null) { return UnityEngine.Input.touchPressureSupported; }
 
-                return MDMInput.instance.touchSupported;
+                return MDMInput.instance.touchPressureSupported;
             }
         }
 
