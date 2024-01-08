@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using System.Threading.Tasks;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -175,7 +177,7 @@ namespace Modoium.Service {
             }
         }
 
-        private void selectSize(object size) {
+        private async void selectSize(object size) {
             if (size == null) { return; }
 
             var index = sizeIndex(size); 
@@ -184,6 +186,11 @@ namespace Modoium.Service {
 
             var method = gameView.GetType().GetMethod("SizeSelectionCallback", BindingFlags.Public | BindingFlags.Instance);
             method.Invoke(gameView, new[] { index, size });
+
+            await Task.Yield();
+
+            method = gameView.GetType().GetMethod("UpdateZoomAreaAndParent", BindingFlags.NonPublic | BindingFlags.Instance);
+            method.Invoke(gameView, new object[] { });
 
             method = gameView.GetType().GetMethod("Repaint", BindingFlags.Public | BindingFlags.Instance);
             method.Invoke(gameView, new object[] { });
