@@ -25,7 +25,7 @@ namespace Modoium.Service {
                 var touch = _inputProvider.GetTouch(index).Value;
 
                 InputSystem.QueueStateEvent(_touchscreen, new TouchState {
-                    touchId = index + 1,
+                    touchId = touch.fingerId + 1,
                     phase = parsePhase(touch.phase),
                     position = touch.position,
                     pressure = 1.0f,
