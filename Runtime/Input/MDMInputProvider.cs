@@ -230,7 +230,7 @@ namespace Modoium.Service {
             return eventSystem;
         }
 
-#if ENABLE_INPUT_SYSTEM
+#if UNITY_INPUT_SYSTEM && ENABLE_INPUT_SYSTEM
         private MDMTouchScreen _touchscreen;
 
         private void updateInputSystem() {
