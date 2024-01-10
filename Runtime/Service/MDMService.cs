@@ -22,6 +22,7 @@ namespace Modoium.Service {
         private MDMMessageDispatcher _messageDispatcher;
         private MDMAudioListener _audioListener;
         private MDMAppData _clientAppData;
+        private MDMServiceConfiguator _serviceConfigurator;
         private MDMDisplayRenderer _displayRenderer;
         private MDMDisplayConfigurator _displayConfigurator;
         private MDMInputProvider _inputProvider;
@@ -37,6 +38,7 @@ namespace Modoium.Service {
         public MDMService(IApplication app) {
             _app = app;
             _messageDispatcher = new MDMMessageDispatcher();
+            _serviceConfigurator = new MDMServiceConfiguator();
             _displayRenderer = new MDMDisplayRenderer(app as MonoBehaviour);
             _displayConfigurator = new MDMDisplayConfigurator(this);
             _inputProvider = new MDMInputProvider(this);
@@ -86,6 +88,7 @@ namespace Modoium.Service {
             }
 
             ModoiumPlugin.UpdateService();
+            _serviceConfigurator.Update();
         }
 
         private void ensureAudioListenerConfigured() {
