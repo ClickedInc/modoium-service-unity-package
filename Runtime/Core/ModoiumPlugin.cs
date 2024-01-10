@@ -54,6 +54,9 @@ namespace Modoium.Service {
         [DllImport(LibName, EntryPoint = "mdm_shutdownService")]
         public static extern void ShutdownService();
 
+        [DllImport(LibName, EntryPoint = "mdm_updateService")]
+        public static extern void UpdateService();
+
         public static MDMServiceState GetServiceState() => (MDMServiceState)mdm_getServiceState();
 
         [DllImport(LibName, EntryPoint = "mdm_reopenService")]

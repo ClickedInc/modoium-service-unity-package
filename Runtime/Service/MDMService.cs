@@ -84,6 +84,8 @@ namespace Modoium.Service {
             if (coreConnected) {
                 _displayConfigurator.Update();
             }
+
+            ModoiumPlugin.UpdateService();
         }
 
         private void ensureAudioListenerConfigured() {
