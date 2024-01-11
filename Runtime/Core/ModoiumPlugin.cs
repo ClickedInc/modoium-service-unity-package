@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.XR;
@@ -15,6 +16,16 @@ using UnityEditor;
 #endif
 
 namespace Modoium.Service {
+    internal enum MDMServiceAvailability {
+        Unspecified = 0,
+        Available = 1,
+
+        Unknown = -1,
+        UnsupportedGraphicsAPI = -2,
+        UnsupportedGraphicsAdapter = -3,
+        FailedToInitEncoder = -4
+    }
+
     internal enum MDMServiceState {
         Idle = 0,
         Disconnected,
@@ -47,6 +58,40 @@ namespace Modoium.Service {
 #else
         public static bool isXR => false;
 #endif
+
+        public static async Task<MDMServiceAvailability> CheckServiceAvailability() {
+            var availability = (MDMServiceAvailability)mdm_getAvailability();
+            if (availability != MDMServiceAvailability.Unspecified) { return availability; }
+
+            GL.IssuePluginEvent(mdm_checkAvailability_renderThread_func(), 0);
+            while (availability == MDMServiceAvailability.Unspecified) {
+                await Task.Yield();
+                availability = (MDMServiceAvailability)mdm_getAvailability();
+            }
+
+            if (availability != MDMServiceAvailability.Available) {
+#if UNITY_EDITOR
+                EditorUtility.DisplayDialog("Failed to init Modoium Remote.", availabilityDescription(availability), "OK");
+#else
+                Debug.LogError($"[modoium] cannot start modoium service: {availabilityDescription(availability)})");
+#endif                
+            }
+
+            return availability;
+        }
+
+        private static string availabilityDescription(MDMServiceAvailability availability) {
+            switch (availability) {
+                case MDMServiceAvailability.UnsupportedGraphicsAPI:
+                    return "Unsupported graphics API. Direct3D 11 is supported only.";
+                case MDMServiceAvailability.UnsupportedGraphicsAdapter:
+                    return "Unsupported graphics adapter. NVIDIA hardware video encoding capable GPU is required.";
+                case MDMServiceAvailability.FailedToInitEncoder:
+                    return "Failed to initialize video encoder. Please check if your graphics driver is up to date.";
+                default:
+                    return "System error";
+            }
+        }
         
         [DllImport(LibName, EntryPoint = "mdm_startupService")]
         public static extern void StartupService(string serviceName, string userdata);
@@ -145,7 +190,9 @@ namespace Modoium.Service {
             commandBuffer.IssuePluginEvent(mdm_cleanup_renderThread_func(), 0);
         }
 
+        [DllImport(LibName)] private static extern int mdm_getAvailability();
         [DllImport(LibName)] private static extern int mdm_getServiceState();
+        [DllImport(LibName)] private static extern IntPtr mdm_checkAvailability_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_init_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_update_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_framebuffersReallocated_renderThread_func();

@@ -26,6 +26,7 @@ namespace Modoium.Service {
         private MDMDisplayRenderer _displayRenderer;
         private MDMDisplayConfigurator _displayConfigurator;
         private MDMInputProvider _inputProvider;
+        private MDMServiceAvailability _availability = MDMServiceAvailability.Unspecified;
         private float _timeToReopenService = -1f;
 
         private bool coreConnected => ModoiumPlugin.GetServiceState() == MDMServiceState.Ready;
@@ -46,7 +47,10 @@ namespace Modoium.Service {
             _messageDispatcher.onMessageReceived += onMDMMessageReceived;
         }
 
-        public void Startup() {
+        public async void Startup() {
+            _availability = await ModoiumPlugin.CheckServiceAvailability();
+            if (_availability != MDMServiceAvailability.Available) { return; }
+
             var settings = ModoiumSettings.instance;
 
             ModoiumPlugin.SetBitrateInMbps(settings.bitrate);
@@ -54,6 +58,8 @@ namespace Modoium.Service {
         }
 
         public void Shutdown() {
+            if (_availability != MDMServiceAvailability.Available) { return; }
+
             ModoiumPlugin.ShutdownService();
 
             _messageDispatcher.onMessageReceived -= onMDMMessageReceived;
@@ -74,6 +80,8 @@ namespace Modoium.Service {
         }
 
         public void Update() {
+            if (_availability != MDMServiceAvailability.Available) { return; }
+
             if (Application.isPlaying) { 
                 ensureAudioListenerConfigured();
             }
