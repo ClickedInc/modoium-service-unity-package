@@ -28,14 +28,17 @@ namespace Modoium.Service {
             }
             _swapChain = new SwapChain(displayConfig, _blitMaterial);
             
-            startCoroutine(renderLoop());
+            startCoroutine(renderLoop(displayConfig));
         }
 
         public void Stop() {
             _running = false;
         }
 
-        private IEnumerator renderLoop() {
+        private IEnumerator renderLoop(MDMVideoDesc displayConfig) {
+            var prevFrameRate = Application.targetFrameRate;
+            Application.targetFrameRate = Mathf.RoundToInt(displayConfig.framerate);
+
             ModoiumPlugin.RenderInit(_commandBuffer);
             flushCommandBuffer(_commandBuffer);
 
@@ -60,6 +63,8 @@ namespace Modoium.Service {
             flushCommandBuffer(_commandBuffer);
 
             _swapChain.Release();
+
+            Application.targetFrameRate = prevFrameRate;
         }
 
         private void flushCommandBuffer(CommandBuffer commandBuffer) {
