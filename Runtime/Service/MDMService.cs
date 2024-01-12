@@ -68,7 +68,7 @@ namespace Modoium.Service {
         public void Play() {
             if (remoteViewConnected == false) { return; } 
 
-            _displayRenderer.Start(remoteViewDesc);
+            _displayRenderer.Start(_inputProvider, remoteViewDesc);
             requestPlay();
         }
 
@@ -87,7 +87,6 @@ namespace Modoium.Service {
             }
 
             _messageDispatcher.Dispatch();
-            _inputProvider.Update();
 
             updateReopenService();
 

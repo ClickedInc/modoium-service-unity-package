@@ -1,13 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System;
 
 namespace Modoium.Service {
     internal class MDMDisplayRenderer {
+        private MDMInputProvider _inputProvider;
         private MonoBehaviour _driver;
         private CommandBuffer _commandBuffer;
         private SwapChain _swapChain;
@@ -19,7 +19,7 @@ namespace Modoium.Service {
             _commandBuffer = new CommandBuffer();
         }
 
-        public void Start(MDMVideoDesc displayConfig) {
+        public void Start(MDMInputProvider inputProvider, MDMVideoDesc displayConfig) {
             if (ModoiumPlugin.isXR || _running) { return; }
             _running = true;
 
@@ -28,6 +28,7 @@ namespace Modoium.Service {
             }
             _swapChain = new SwapChain(displayConfig, _blitMaterial);
             
+            _inputProvider = inputProvider;
             startCoroutine(renderLoop(displayConfig));
         }
 
@@ -46,6 +47,7 @@ namespace Modoium.Service {
                 yield return new WaitForEndOfFrame();
                 if (_running == false) { break; }
 
+                _inputProvider.Update();
                 ModoiumPlugin.RenderUpdate(_commandBuffer);
 
                 if (_swapChain.reallocated) {
