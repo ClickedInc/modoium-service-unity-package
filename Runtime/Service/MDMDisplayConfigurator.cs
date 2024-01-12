@@ -75,8 +75,27 @@ namespace Modoium.Service {
             }
         }
 
+        public void OnPostFirstMessageDispatch(MDMMessageDispatcher.Event evt) {
+            // NOTE: must handle the first update due to reconstruction on editor play/stop
+
+            switch (evt) {
+                case MDMMessageDispatcher.Event.None:
+                    //restore states on reconstruction
+                    _remoteConnected = _owner.remoteViewConnected;
+                    if (_remoteConnected) {
+                        var remoteView = _owner.remoteViewDesc;
+                        _lastRemoteViewSize.x = remoteView.contentWidth;
+                        _lastRemoteViewSize.y = remoteView.contentHeight;
+                    }
+                    break;
+                case MDMMessageDispatcher.Event.AmpClosed:
+                    _remoteConnected = true;
+                    break;
+            }
+        }
+
         public void Update() {
-            if (ModoiumPlugin.isXR || checkIfIsFirstUpdate()) { return; }
+            if (ModoiumPlugin.isXR) { return; }
 
             if (_owner.remoteViewConnected) {
                 if (_remoteConnected) {
@@ -91,22 +110,6 @@ namespace Modoium.Service {
             }
 
             _remoteConnected = _owner.remoteViewConnected;
-        }
-
-        private bool checkIfIsFirstUpdate() {
-            // NOTE: must handle the first update due to reconstruction on editor play/stop
-            if (_isFirstUpdate == false) { return false; }
-
-            // restore states on reconstruction (even though it might not be correct)
-            _remoteConnected = _owner.remoteViewConnected;
-            if (_remoteConnected) {
-                var remoteView = _owner.remoteViewDesc;
-                _lastRemoteViewSize.x = remoteView.contentWidth;
-                _lastRemoteViewSize.y = remoteView.contentHeight;
-            }
-
-            _isFirstUpdate = false;
-            return true;
         }
 
         private void handleRemoteViewSizeChange() {
@@ -250,6 +253,7 @@ namespace Modoium.Service {
         private Vector2Int _lastRemoteViewSize;
 
         private void init() {}
+        public void OnPostFirstMessageDispatch(MDMMessageDispatcher.Event evt) {}
 
         public void Update() {
             if (ModoiumPlugin.isXR) { return; }

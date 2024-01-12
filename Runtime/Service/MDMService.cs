@@ -55,6 +55,8 @@ namespace Modoium.Service {
 
             ModoiumPlugin.SetBitrateInMbps(settings.bitrate);
             ModoiumPlugin.StartupService(settings.serviceName, settings.serviceUserdata);
+
+            _displayConfigurator.OnPostFirstMessageDispatch(_messageDispatcher.Dispatch());
         }
 
         public void Shutdown() {

@@ -12,12 +12,20 @@ using Newtonsoft.Json;
 
 namespace Modoium.Service {
     internal class MDMMessageDispatcher {
+        public enum Event : byte {
+            None = 0x01,
+            AmpOpened = 0x02,
+            AmpClosed = 0x04
+        }
+
         private byte[] _buffer;
 
         public delegate void MessageReceiveHandler(MDMMessage message);
         public event MessageReceiveHandler onMessageReceived;
 
-        public void Dispatch() {
+        public Event Dispatch() {
+            var evt = Event.None;
+
             while (ModoiumPlugin.CheckMessageQueue(out var source, out var data, out var length)) {
                 var buffer = bufferArray(length);
                 Marshal.Copy(data, buffer, 0, length);
@@ -48,9 +56,11 @@ namespace Modoium.Service {
                         onMessageReceived?.Invoke(new MDMMessageSessionCancelled(body));
                         break;
                     case MDMMessage.NameAmpOpened:
+                        evt = Event.AmpOpened;
                         onMessageReceived?.Invoke(new MDMMessageAmpOpened());
                         break;
                     case MDMMessage.NameAmpClosed:
+                        evt = Event.AmpClosed;
                         onMessageReceived?.Invoke(new MDMMessageAmpClosed(body));
                         break;
                     case MDMMessage.NameClientAppData:
@@ -58,6 +68,7 @@ namespace Modoium.Service {
                         break;
                 }
             }
+            return evt;
         }
 
         private byte[] bufferArray(int length) {
