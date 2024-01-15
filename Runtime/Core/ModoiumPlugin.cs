@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.XR;
@@ -308,5 +309,23 @@ namespace Modoium.Service {
         [DllImport(LibName)] private static extern void mdm_updateVolumeInfo(Vector3D position, Vector4D rotation, Vector3D scale);
         [DllImport(LibName)] private static extern void mdm_setVolume(float[] vertices, int vertexCount, int[] indices, int indexCount);
         [DllImport(LibName)] private static extern void mdm_setChromaKeyCamera(Vector3D keyColor, float similarity, float smoothness, float spill);
+
+        // cache for service configurator
+        private static StringBuilder _serviceNameBuilder = new StringBuilder(1024);
+
+        public static string serviceConfigurator_serviceName {
+            get {
+                _serviceNameBuilder.Clear();
+                mdm_serviceConfigurator_getServiceName(_serviceNameBuilder, _serviceNameBuilder.Capacity);
+
+                return _serviceNameBuilder.ToString();
+            }
+            set {
+                mdm_serviceConfigurator_setServiceName(value);
+            }
+        }
+
+        [DllImport(LibName)] private static extern void mdm_serviceConfigurator_setServiceName(string name);
+        [DllImport(LibName)] private static extern void mdm_serviceConfigurator_getServiceName(StringBuilder outName, int maxLength);
     }
 }
