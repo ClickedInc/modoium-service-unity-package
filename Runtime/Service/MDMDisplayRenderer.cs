@@ -40,7 +40,7 @@ namespace Modoium.Service {
             var prevFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = Mathf.RoundToInt(displayConfig.framerate);
 
-            ModoiumPlugin.RenderInit(_commandBuffer);
+            ModoiumPlugin.RenderStart(_commandBuffer);
             flushCommandBuffer(_commandBuffer);
 
             while (_running) {
@@ -61,7 +61,7 @@ namespace Modoium.Service {
                 flushCommandBuffer(_commandBuffer);
             }
 
-            ModoiumPlugin.RenderCleanup(_commandBuffer);
+            ModoiumPlugin.RenderStop(_commandBuffer);
             flushCommandBuffer(_commandBuffer);
 
             _swapChain.Release();

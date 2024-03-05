@@ -64,21 +64,49 @@ namespace Modoium.Service {
             var availability = (MDMServiceAvailability)mdm_getAvailability();
             if (availability != MDMServiceAvailability.Unspecified) { return availability; }
 
-            GL.IssuePluginEvent(mdm_checkAvailability_renderThread_func(), 0);
+            availability = checkAvailabilityFromSystemInfo();
+            if (availability != MDMServiceAvailability.Unspecified) { 
+                mdm_setAvailability((int)availability);
+                displayDialogIfServiceUnavailable(availability);
+                return availability; 
+            }
+
+            GL.IssuePluginEvent(mdm_loadEncoderDevice_renderThread_func(), SystemInfo.graphicsDeviceVendorID);
             while (availability == MDMServiceAvailability.Unspecified) {
                 await Task.Yield();
                 availability = (MDMServiceAvailability)mdm_getAvailability();
             }
+            displayDialogIfServiceUnavailable(availability);
+            
+            return availability;
+        }
 
-            if (availability != MDMServiceAvailability.Available) {
-#if UNITY_EDITOR
-                EditorUtility.DisplayDialog("Failed to init Modoium Remote.", availabilityDescription(availability), "OK");
-#else
-                Debug.LogError($"[modoium] cannot start modoium service: {availabilityDescription(availability)})");
-#endif                
+        private static MDMServiceAvailability checkAvailabilityFromSystemInfo() {
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11) {
+                return MDMServiceAvailability.UnsupportedGraphicsAPI;
             }
 
-            return availability;
+            switch (SystemInfo.graphicsDeviceVendorID) {
+                case 0x8086: // Intel
+                case 0x10DE: // NVIDIA
+                case 0x1002: // AMD
+                case 0x106B: // Apple
+                    break;
+                default:
+                    return MDMServiceAvailability.UnsupportedGraphicsAdapter;
+            }
+
+            return MDMServiceAvailability.Unspecified;
+        }
+
+        private static void displayDialogIfServiceUnavailable(MDMServiceAvailability availability) {
+            if (availability == MDMServiceAvailability.Available) { return; } 
+
+#if UNITY_EDITOR
+            EditorUtility.DisplayDialog("Failed to init Modoium Remote.", availabilityDescription(availability), "OK");
+#else
+            Debug.LogError($"[modoium] cannot start modoium service: {availabilityDescription(availability)})");
+#endif                
         }
 
         private static string availabilityDescription(MDMServiceAvailability availability) {
@@ -86,7 +114,7 @@ namespace Modoium.Service {
                 case MDMServiceAvailability.UnsupportedGraphicsAPI:
                     return "Unsupported graphics API. Direct3D 11 is supported only.";
                 case MDMServiceAvailability.UnsupportedGraphicsAdapter:
-                    return "Unsupported graphics adapter. NVIDIA hardware video encoding capable GPU is required.";
+                    return $"Unsupported graphics adapter: {SystemInfo.graphicsDeviceName}";
                 case MDMServiceAvailability.FailedToInitEncoder:
                     return "Failed to initialize video encoder. Please check if your graphics driver is up to date.";
                 default:
@@ -164,8 +192,8 @@ namespace Modoium.Service {
         [DllImport(LibName, EntryPoint = "mdm_getInputDeactivated")]
         public static extern bool GetInputDeactivated(byte device, byte control);
 
-        public static void RenderInit(CommandBuffer commandBuffer) {
-            commandBuffer.IssuePluginEvent(mdm_init_renderThread_func(), 0);
+        public static void RenderStart(CommandBuffer commandBuffer) {
+            commandBuffer.IssuePluginEvent(mdm_start_renderThread_func(), 0);
         }
 
         public static void RenderUpdate(CommandBuffer commandBuffer) {
@@ -187,19 +215,20 @@ namespace Modoium.Service {
             commandBuffer.IssuePluginEvent(mdm_postRender_renderThread_func(), framebufferIndexMask | aspectMask);
         }
 
-        public static void RenderCleanup(CommandBuffer commandBuffer) {
-            commandBuffer.IssuePluginEvent(mdm_cleanup_renderThread_func(), 0);
+        public static void RenderStop(CommandBuffer commandBuffer) {
+            commandBuffer.IssuePluginEvent(mdm_stop_renderThread_func(), 0);
         }
 
         [DllImport(LibName)] private static extern int mdm_getAvailability();
+        [DllImport(LibName)] private static extern void mdm_setAvailability(int value);
         [DllImport(LibName)] private static extern int mdm_getServiceState();
-        [DllImport(LibName)] private static extern IntPtr mdm_checkAvailability_renderThread_func();
-        [DllImport(LibName)] private static extern IntPtr mdm_init_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_loadEncoderDevice_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_start_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_update_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_framebuffersReallocated_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_preRender_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_postRender_renderThread_func();
-        [DllImport(LibName)] private static extern IntPtr mdm_cleanup_renderThread_func();
+        [DllImport(LibName)] private static extern IntPtr mdm_stop_renderThread_func();
         [DllImport(LibName)] private static extern bool mdm_getInputTouch2D(byte device, byte control, out Vector2D position, out byte state);
 
         [StructLayout(LayoutKind.Sequential)]
