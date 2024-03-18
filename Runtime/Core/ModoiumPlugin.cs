@@ -82,18 +82,25 @@ namespace Modoium.Service {
         }
 
         private static MDMServiceAvailability checkAvailabilityFromSystemInfo() {
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11) {
-                return MDMServiceAvailability.UnsupportedGraphicsAPI;
+            if (Application.platform == RuntimePlatform.OSXEditor ||
+                Application.platform == RuntimePlatform.OSXPlayer) { 
+                if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Metal) {
+                    return MDMServiceAvailability.UnsupportedGraphicsAPI;
+                }
             }
+            else {
+                if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11) {
+                    return MDMServiceAvailability.UnsupportedGraphicsAPI;
+                }
 
-            switch (SystemInfo.graphicsDeviceVendorID) {
-                case 0x8086: // Intel
-                case 0x10DE: // NVIDIA
-                case 0x1002: // AMD
-                case 0x106B: // Apple
-                    break;
-                default:
-                    return MDMServiceAvailability.UnsupportedGraphicsAdapter;
+                switch (SystemInfo.graphicsDeviceVendorID) {
+                    case 0x8086: // Intel
+                    case 0x10DE: // NVIDIA
+                    case 0x1002: // AMD
+                        break;
+                    default:
+                        return MDMServiceAvailability.UnsupportedGraphicsAdapter;
+                }
             }
 
             return MDMServiceAvailability.Unspecified;

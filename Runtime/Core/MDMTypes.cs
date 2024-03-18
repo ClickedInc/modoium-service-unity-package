@@ -10,9 +10,10 @@ namespace Modoium.Service {
     }
 
     public enum MDMCodec {
-        H264 = 0x1,
-        H265 = 0x2,
-        All = 0x3
+        H264 = 0x01,
+        H265 = 0x02,
+        AV1 = 0x04,
+        All = 0xFF
     }
 
     public enum MDMEncodingPreset {
