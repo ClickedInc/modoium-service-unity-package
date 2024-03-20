@@ -83,11 +83,7 @@ namespace Modoium.Service {
         }
 
         private class SwapChain {
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-            private const int Length = 1;
-#else 
             private const int Length = 4;
-#endif
 
             private Material _blitMaterial;
             private RenderTexture[] _textures;
