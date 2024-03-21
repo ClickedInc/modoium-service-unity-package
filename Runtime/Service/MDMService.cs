@@ -40,7 +40,7 @@ namespace Modoium.Service {
             _app = app;
             _messageDispatcher = new MDMMessageDispatcher();
             _serviceConfigurator = new MDMServiceConfigurator();
-            _displayRenderer = new MDMDisplayRenderer(app as MonoBehaviour);
+            _displayRenderer = new MDMDisplayRenderer(MaxFrameRate, app as MonoBehaviour);
             _displayConfigurator = new MDMDisplayConfigurator(this);
             _inputProvider = new MDMInputProvider(this);
  

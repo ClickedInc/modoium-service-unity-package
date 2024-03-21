@@ -7,14 +7,17 @@ using System;
 
 namespace Modoium.Service {
     internal class MDMDisplayRenderer {
-        private MDMInputProvider _inputProvider;
+        private float _maxFramerate;
         private MonoBehaviour _driver;
         private CommandBuffer _commandBuffer;
         private SwapChain _swapChain;
         private Material _blitMaterial;
+        private MDMInputProvider _inputProvider;
         private bool _running;
+        private double _lastFrameTime;
 
-        public MDMDisplayRenderer(MonoBehaviour driver = null) {
+        public MDMDisplayRenderer(float maxFramerate, MonoBehaviour driver = null) {
+            _maxFramerate = maxFramerate;
             _driver = driver;
             _commandBuffer = new CommandBuffer();
         }
@@ -38,7 +41,12 @@ namespace Modoium.Service {
 
         private IEnumerator renderLoop(MDMVideoDesc displayConfig) {
             var prevFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = Mathf.RoundToInt(displayConfig.framerate);
+            var encodeFrameRate = Mathf.Min(displayConfig.framerate, _maxFramerate);
+            Application.targetFrameRate = Mathf.RoundToInt(Mathf.Min(encodeFrameRate * 2, _maxFramerate));
+
+            _lastFrameTime = Time.timeAsDouble;
+            var frameInterval = 1.0 / encodeFrameRate;
+            var resetFrameTimeThreshold = 0.18;
 
             ModoiumPlugin.RenderStart(_commandBuffer);
             flushCommandBuffer(_commandBuffer);
@@ -46,6 +54,12 @@ namespace Modoium.Service {
             while (_running) {
                 yield return new WaitForEndOfFrame();
                 if (_running == false) { break; }
+
+                var elapsed = Time.timeAsDouble - _lastFrameTime;
+                if (elapsed < frameInterval) { continue; }
+
+                _lastFrameTime = elapsed >= resetFrameTimeThreshold ? Time.timeAsDouble : 
+                                                                      (_lastFrameTime + frameInterval);
 
                 _inputProvider.Update();
                 ModoiumPlugin.RenderUpdate(_commandBuffer);
