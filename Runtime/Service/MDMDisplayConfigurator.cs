@@ -45,7 +45,6 @@ namespace Modoium.Service {
         private Type _typeGameView;
         private MethodInfo _methodGetMainPlayModeView;
         private Vector2Int _lastRemoteViewSize;
-        private bool _isFirstUpdate = true;
 
         private EditorWindow mainGameView {
             get {

@@ -17,6 +17,14 @@ using UnityEditor;
 #endif
 
 namespace Modoium.Service {
+    public enum MDMServiceState {
+        Idle = 0,
+        Disconnected,
+        Connecting,
+        Reconnecting,
+        Ready
+    }
+    
     internal enum MDMServiceAvailability {
         Unspecified = 0,
         Available = 1,
@@ -25,13 +33,6 @@ namespace Modoium.Service {
         UnsupportedGraphicsAPI = -2,
         UnsupportedGraphicsAdapter = -3,
         FailedToInitEncoder = -4
-    }
-
-    internal enum MDMServiceState {
-        Idle = 0,
-        Disconnected,
-        Connecting,
-        Ready
     }
 
     internal static class ModoiumPlugin {

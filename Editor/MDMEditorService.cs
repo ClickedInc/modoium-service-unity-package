@@ -10,6 +10,9 @@ namespace Modoium.Service.Editor {
         private static bool _started;
         private static bool _playRequested;
 
+        public static MDMService service => _instance?._service;
+        public static MDMEditorStatusMonitor statusMonitor => _instance?._statusMonitor;
+
         static MDMEditorService() {
             EditorApplication.update += EditorUpdate;
             EditorApplication.playModeStateChanged += EditorPlayModeStateChanged;
@@ -46,9 +49,11 @@ namespace Modoium.Service.Editor {
         }
 
         private MDMService _service;
+        private MDMEditorStatusMonitor _statusMonitor;
 
         private MDMEditorService() {
             _service = new MDMService(this);
+            _statusMonitor = new MDMEditorStatusMonitor(_service);
         }
 
         private void Start() {
@@ -57,6 +62,7 @@ namespace Modoium.Service.Editor {
 
         private void Update() {
             _service.Update();
+            _statusMonitor.Update();
         }
 
         private void OnDestroy() {

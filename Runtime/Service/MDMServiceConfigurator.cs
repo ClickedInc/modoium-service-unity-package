@@ -7,15 +7,19 @@ namespace Modoium.Service {
         private const float DelayToApplyAfterEdit = 1.5f;
 
         private string _serviceNameInEdit;
+        private string _lastAppliedServiceName;
         private float _timeToApply = -1f;
 
         private string currentServiceName => Application.productName;
+
+        public string serviceName => _lastAppliedServiceName;
 
         public MDMServiceConfigurator() {
             if (string.IsNullOrEmpty(currentServiceName) == false &&
                 string.IsNullOrEmpty(ModoiumPlugin.serviceConfigurator_serviceName)) {
                 ModoiumPlugin.serviceConfigurator_serviceName = currentServiceName;
             }
+            _lastAppliedServiceName = currentServiceName;
         }
 
         public void Update() {
@@ -43,9 +47,8 @@ namespace Modoium.Service {
         }
 
         private void applyConfigs() {
-            var settings = ModoiumSettings.instance;
-
-            ModoiumPlugin.ChangeServiceProps(settings.serviceName);
+            ModoiumPlugin.ChangeServiceProps(currentServiceName);
+            _lastAppliedServiceName = currentServiceName;
         }
     }
 }

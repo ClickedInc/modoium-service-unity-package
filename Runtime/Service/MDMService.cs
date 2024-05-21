@@ -29,8 +29,10 @@ namespace Modoium.Service {
         private MDMServiceAvailability _availability = MDMServiceAvailability.Unspecified;
         private float _timeToReopenService = -1f;
 
-        private bool coreConnected => ModoiumPlugin.GetServiceState() == MDMServiceState.Ready;
-
+        private bool coreConnected => state == MDMServiceState.Ready;
+    
+        internal string serviceName => _serviceConfigurator.serviceName;
+        internal MDMServiceState state => ModoiumPlugin.GetServiceState();
         internal MDMVideoDesc remoteViewDesc { get; private set; }
         internal MDMInputDesc remoteInputDesc { get; private set; }
         internal bool remoteViewConnected => coreConnected && remoteViewDesc != null;
@@ -54,7 +56,7 @@ namespace Modoium.Service {
             var settings = ModoiumSettings.instance;
 
             ModoiumPlugin.SetBitrateInMbps(settings.bitrate);
-            ModoiumPlugin.StartupService(settings.serviceName, settings.serviceUserdata);
+            ModoiumPlugin.StartupService(_serviceConfigurator.serviceName, settings.serviceUserdata);
 
             _displayConfigurator.OnPostFirstMessageDispatch(_messageDispatcher.Dispatch());
         }
@@ -124,7 +126,7 @@ namespace Modoium.Service {
             if (Time.realtimeSinceStartup < _timeToReopenService) { return; }
 
             var settings = ModoiumSettings.instance;
-            ModoiumPlugin.ReopenService(settings.serviceName, settings.serviceUserdata);
+            ModoiumPlugin.ReopenService(_serviceConfigurator.serviceName, settings.serviceUserdata);
 
             _timeToReopenService = -1f;
         }

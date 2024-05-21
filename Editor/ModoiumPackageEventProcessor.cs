@@ -10,6 +10,7 @@ namespace Modoium.Service.Editor {
     internal class ModoiumPackageEventProcessor {
         static ModoiumPackageEventProcessor() {
             Events.registeringPackages += onRegisteringPackages;
+            Events.registeredPackages += onRegisteredPackages;
         }
 
         static void onRegisteringPackages(PackageRegistrationEventArgs args) {
@@ -31,6 +32,19 @@ namespace Modoium.Service.Editor {
                 var projectPath = Application.dataPath.Substring(0, Application.dataPath.Length - 7);
                 EditorApplication.OpenProject(projectPath);
             }
+        }
+
+        static void onRegisteredPackages(PackageRegistrationEventArgs args) {
+            var packageAdded = false;
+            foreach (var info in args.added) {
+                if (info.name == "com.modoium.service") {
+                    packageAdded = true;
+                    break;
+                }
+            }
+            if (packageAdded == false) { return; }
+
+            MDMRemoteStatusWindow.OpenWindow();
         }
     }
 }

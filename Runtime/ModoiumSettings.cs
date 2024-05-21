@@ -55,7 +55,6 @@ namespace Modoium.Service {
         [SerializeField] private bool _advancedSettingsEnabled = false;
         [SerializeField] private MDMTextureColorSpaceHint _displayTextureColorSpaceHint = MDMTextureColorSpaceHint.None;
 
-        internal string serviceName => Application.isEditor ? $"Unity Editor - {Application.productName}" : Application.productName;
         internal float bitrate => _bitrate;
         internal string serviceUserdata => string.Empty;
 
