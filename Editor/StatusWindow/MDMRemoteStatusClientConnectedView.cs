@@ -18,14 +18,14 @@ namespace Modoium.Service.Editor {
             parent.Add(this);
         }
 
-        public void UpdateView(MDMRemoteStatusWindow.State state, float videoBitrate, string clientUserAgent) {
+        public void UpdateView(MDMRemoteStatusWindow.State state, float videoBitrate, string deviceName) {
             if (state != MDMRemoteStatusWindow.State.ClientConnected) {
                 style.display = DisplayStyle.None;
                 return;
             }
             style.display = DisplayStyle.Flex;
 
-            updateInfo(videoBitrate, clientUserAgent);
+            updateInfo(videoBitrate, deviceName);
         }
 
         private VisualElement createStatus() {
@@ -49,8 +49,8 @@ namespace Modoium.Service.Editor {
             return box;
         }
 
-        private void updateInfo(float videoBitrate, string clientUserAgent) {
-            _bodyDevice.text = string.Format(Styles.bodyDevice, clientUserAgent);
+        private void updateInfo(float videoBitrate, string deviceName) {
+            _bodyDevice.text = string.Format(Styles.bodyDevice, deviceName);
             _bodyVideoBitrate.text = string.Format(Styles.bodyVideoBitrate, videoBitrate);
         }
 

@@ -23,9 +23,9 @@ namespace Modoium.Service.Editor {
         private string _hostName = "unknown host";
         private string _serviceName;
         private string _verificationCode = "000000";
-        private string _clientUserAgent;
+        private string _connectedDeviceName;
 
-        [MenuItem("Modoium/Show Status...", false, 100)]
+        [MenuItem("Modoium/View Status...", false, 100)]
         public static void OpenWindow() {
             var window = GetWindow<MDMRemoteStatusWindow>();
 
@@ -96,12 +96,28 @@ namespace Modoium.Service.Editor {
                 _serviceName = service.serviceName;
                 changed = true;
             }
+            if (_hostName != service.hostName) {
+                _hostName = service.hostName;
+                changed = true;
+            }
+            if (_verificationCode != service.verificationCode) {
+                _verificationCode = service.verificationCode;
+                changed = true;
+            }
+            if (_videoBitrate != service.videoBitrate) {
+                _videoBitrate = service.videoBitrate;
+                changed = true;
+            }
+            if (_connectedDeviceName != service.connectedDeviceName) {
+                _connectedDeviceName = service.connectedDeviceName;
+                changed = true;
+            }
         }
 
         private void updateViews() {
             _noRunningCoreView.UpdateView(_state);
             _coreConnectedView.UpdateView(_state, _videoBitrate, _hostName, _serviceName, _verificationCode);
-            _clientConnectedView.UpdateView(_state, _videoBitrate, _clientUserAgent);
+            _clientConnectedView.UpdateView(_state, _videoBitrate, _connectedDeviceName);
         }
 
         private static void onOpenURL(string url) {

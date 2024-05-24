@@ -38,6 +38,8 @@ namespace Modoium.Service {
     internal static class ModoiumPlugin {
         private const string LibName = "modoium";
 
+        private static StringBuilder _stringBuilder = new StringBuilder(2048);
+
 #if UNITY_XR_MANAGEMENT
     #if UNITY_EDITOR
         public static bool isXR {
@@ -60,6 +62,37 @@ namespace Modoium.Service {
 #else
         public static bool isXR => false;
 #endif
+
+        public static string hostName {
+            get {
+                _stringBuilder.Clear();
+                mdm_getHostName(_stringBuilder, _stringBuilder.Capacity);
+
+                return _stringBuilder.ToString();
+            }
+        }
+
+        public static string verificationCode {
+            get {
+                _stringBuilder.Clear();
+                mdm_getVerificationCode(_stringBuilder, _stringBuilder.Capacity);
+
+                return _stringBuilder.ToString();
+            }
+        }
+
+        public static float videoBitrate => mdm_getVideoBitrate() / 1000000.0f;
+
+        public static string clientUserAgent {
+            get {
+                _stringBuilder.Clear();
+                mdm_getClientUserAgent(_stringBuilder, _stringBuilder.Capacity);
+
+                return _stringBuilder.ToString();
+            }
+        }
+
+        public static MDMServiceState serviceState => (MDMServiceState)mdm_getServiceState();
 
         public static async Task<MDMServiceAvailability> CheckServiceAvailability() {
             var availability = (MDMServiceAvailability)mdm_getAvailability();
@@ -131,7 +164,7 @@ namespace Modoium.Service {
         }
         
         [DllImport(LibName, EntryPoint = "mdm_startupService")]
-        public static extern void StartupService(string serviceName, string userdata);
+        public static extern void StartupService(string serviceName, string userAgent, string userdata);
 
         [DllImport(LibName, EntryPoint = "mdm_changeServiceProps")]
         public static extern void ChangeServiceProps(string serviceName);
@@ -142,8 +175,6 @@ namespace Modoium.Service {
         [DllImport(LibName, EntryPoint = "mdm_updateService")]
         public static extern void UpdateService();
 
-        public static MDMServiceState GetServiceState() => (MDMServiceState)mdm_getServiceState();
-
         [DllImport(LibName, EntryPoint = "mdm_reopenService")]
         public static extern void ReopenService(string serviceName, string userdata);
 
@@ -152,14 +183,6 @@ namespace Modoium.Service {
 
         [DllImport(LibName, EntryPoint = "mdm_removeFirstMessageFromQueue")]
         public static extern void RemoveFirstMessageFromQueue();
-
-        [DllImport(LibName, EntryPoint = "mdm_setBitrate")]
-        public static extern void SetBitrate(long bitrate);
-
-        public static void SetBitrateInMbps(float bitrateInMbps) {
-            long roundedInKbps = Mathf.RoundToInt(bitrateInMbps * 1000);
-            SetBitrate(roundedInKbps * 1000);
-        }
 
         [DllImport(LibName, EntryPoint = "mdm_processMasterAudioOutput")]
         public static extern void ProcessMasterAudioOutput(float[] data, int sampleCount, int channels, double timestamp);
@@ -229,6 +252,10 @@ namespace Modoium.Service {
 
         [DllImport(LibName)] private static extern int mdm_getAvailability();
         [DllImport(LibName)] private static extern void mdm_setAvailability(int value);
+        [DllImport(LibName)] private static extern void mdm_getHostName(StringBuilder outName, int maxLength);
+        [DllImport(LibName)] private static extern void mdm_getVerificationCode(StringBuilder outCode, int maxLength);
+        [DllImport(LibName)] private static extern long mdm_getVideoBitrate();
+        [DllImport(LibName)] private static extern void mdm_getClientUserAgent(StringBuilder outValue, int maxLength);
         [DllImport(LibName)] private static extern int mdm_getServiceState();
         [DllImport(LibName)] private static extern IntPtr mdm_loadEncoderDevice_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_start_renderThread_func();
@@ -348,14 +375,12 @@ namespace Modoium.Service {
         [DllImport(LibName)] private static extern void mdm_setChromaKeyCamera(Vector3D keyColor, float similarity, float smoothness, float spill);
 
         // cache for service configurator
-        private static StringBuilder _serviceNameBuilder = new StringBuilder(1024);
-
         public static string serviceConfigurator_serviceName {
             get {
-                _serviceNameBuilder.Clear();
-                mdm_serviceConfigurator_getServiceName(_serviceNameBuilder, _serviceNameBuilder.Capacity);
+                _stringBuilder.Clear(); 
+                mdm_serviceConfigurator_getServiceName(_stringBuilder, _stringBuilder.Capacity);
 
-                return _serviceNameBuilder.ToString();
+                return _stringBuilder.ToString();
             }
             set {
                 mdm_serviceConfigurator_setServiceName(value);

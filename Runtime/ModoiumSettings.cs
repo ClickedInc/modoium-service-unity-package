@@ -15,6 +15,7 @@ namespace Modoium.Service {
     }
 
     public class ModoiumSettings : ScriptableObject {
+        internal const string Version = "0.8.3";
         internal const string AssetDir = "Assets/Modoium";
         internal const string AssetPath = "Assets/Modoium/ModoiumSettings.asset";
 
@@ -34,7 +35,6 @@ namespace Modoium.Service {
             }
 
             settings = CreateInstance<ModoiumSettings>();
-            settings._bitrate = 24.0f;
             AssetDatabase.CreateAsset(settings, AssetPath);
             AssetDatabase.SaveAssets();
 
@@ -51,11 +51,9 @@ namespace Modoium.Service {
         }
 #endif
 
-        [SerializeField] [Range(4.0f, 200.0f)] private float _bitrate = 24.0f;
         [SerializeField] private bool _advancedSettingsEnabled = false;
         [SerializeField] private MDMTextureColorSpaceHint _displayTextureColorSpaceHint = MDMTextureColorSpaceHint.None;
 
-        internal float bitrate => _bitrate;
         internal string serviceUserdata => string.Empty;
 
         internal int idleFrameRate {
@@ -117,7 +115,6 @@ namespace Modoium.Service {
         }
 
         private SerializedObject _settings;
-        private SerializedProperty _propBitrate;
         private SerializedProperty _propAdvancedSettingsEnabled;
         private SerializedProperty _propDisplayTextureColorSpaceHint;
 
@@ -129,7 +126,6 @@ namespace Modoium.Service {
         public override void OnActivate(string searchContext, VisualElement rootElement) {
             _settings = ModoiumSettings.GetSerializedSettings();
 
-            _propBitrate = _settings.FindProperty("_bitrate");
             _propAdvancedSettingsEnabled = _settings.FindProperty("_advancedSettingsEnabled");
             _propDisplayTextureColorSpaceHint = _settings.FindProperty("_displayTextureColorSpaceHint");
 
@@ -137,15 +133,9 @@ namespace Modoium.Service {
         }
 
         public override void OnGUI(string searchContext) {
-            var bitrate = _propBitrate.floatValue;
-
             var prevLabelWidth = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = 200;
             {
-                EditorGUILayout.PropertyField(_propBitrate, Styles.labelBitrate);
-
-                EditorGUILayout.Space();
-
                 EditorGUILayout.BeginVertical("box");
                 {
                     EditorGUILayout.PropertyField(_propAdvancedSettingsEnabled, Styles.labelAdvancedSettingsEnabled);
@@ -161,10 +151,6 @@ namespace Modoium.Service {
             EditorGUIUtility.labelWidth = prevLabelWidth;
 
             _settings.ApplyModifiedPropertiesWithoutUndo();
-
-            if (bitrate != _propBitrate.floatValue) {
-                ModoiumPlugin.SetBitrateInMbps(_propBitrate.floatValue);
-            }
         }
 
         private static class Styles {

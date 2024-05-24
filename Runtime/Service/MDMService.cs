@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
-using System.Threading.Tasks;
-using System.Reflection;
+using System.IO;
+using System.Web;
 using UnityEngine;
+using System.Text.RegularExpressions;
+
 
 #if UNITY_EDITOR
 using Unity.Plastic.Newtonsoft.Json;
@@ -28,15 +30,29 @@ namespace Modoium.Service {
         private MDMInputProvider _inputProvider;
         private MDMServiceAvailability _availability = MDMServiceAvailability.Unspecified;
         private float _timeToReopenService = -1f;
+        private Regex _regexDeviceName = new Regex(@"Modoium/[^\s]+ \((.+);.+\)");
 
         private bool coreConnected => state == MDMServiceState.Ready;
-    
+
         internal string serviceName => _serviceConfigurator.serviceName;
-        internal MDMServiceState state => ModoiumPlugin.GetServiceState();
+        internal string hostName => ModoiumPlugin.hostName;
+        internal string verificationCode => ModoiumPlugin.verificationCode;
+        internal float videoBitrate => ModoiumPlugin.videoBitrate;
+        internal MDMServiceState state => ModoiumPlugin.serviceState;
         internal MDMVideoDesc remoteViewDesc { get; private set; }
         internal MDMInputDesc remoteInputDesc { get; private set; }
         internal bool remoteViewConnected => coreConnected && remoteViewDesc != null;
         internal bool isAppPlaying => _app.isPlaying;
+
+        internal string connectedDeviceName {
+            get {
+                var userAgent = ModoiumPlugin.clientUserAgent;
+                var matches = _regexDeviceName.Matches(userAgent);
+                if (matches.Count == 0 || matches[0].Groups.Count <= 1) { return userAgent; }
+
+                return matches[0].Groups[1].Value;
+            }
+        }
 
         public MDMService(IApplication app) {
             _app = app;
@@ -55,8 +71,9 @@ namespace Modoium.Service {
 
             var settings = ModoiumSettings.instance;
 
-            ModoiumPlugin.SetBitrateInMbps(settings.bitrate);
-            ModoiumPlugin.StartupService(_serviceConfigurator.serviceName, settings.serviceUserdata);
+            ModoiumPlugin.StartupService(_serviceConfigurator.serviceName,
+                                         makeUserAgentString(),
+                                         settings.serviceUserdata);
 
             _displayConfigurator.OnPostFirstMessageDispatch(_messageDispatcher.Dispatch());
         }
@@ -102,10 +119,15 @@ namespace Modoium.Service {
             _serviceConfigurator.Update();
         }
 
+        private string makeUserAgentString() {
+            var servicePath = Regex.Escape(Path.GetFullPath(Path.Combine(Application.dataPath, "..")).Replace("\\", "/"));
+            return $"Modoium Remote/{ModoiumSettings.Version} (Unity Editor; {servicePath})";
+        }
+
         private void ensureAudioListenerConfigured() {
             if (_audioListener != null) { return; }
 
-            var audioListener = UnityEngine.Object.FindObjectOfType<AudioListener>();
+            var audioListener = UnityEngine.Object.FindFirstObjectByType<AudioListener>();
             if (audioListener == null) { return; }
 
             _audioListener = audioListener.gameObject.GetComponent<MDMAudioListener>();
@@ -115,7 +137,7 @@ namespace Modoium.Service {
         }
 
         private void updateReopenService() {
-            if (ModoiumPlugin.GetServiceState() != MDMServiceState.Disconnected) {
+            if (state != MDMServiceState.Disconnected) {
                 _timeToReopenService = -1f;
                 return;
             }

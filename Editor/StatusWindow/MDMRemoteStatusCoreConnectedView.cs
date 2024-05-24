@@ -197,27 +197,29 @@ namespace Modoium.Service.Editor {
 #endif
 
         private class Styles {
-            public static string modoium = "Modoium";
             public static string bodyStatus = $"Modoium Hub connected";
             public static string bodyVideoBitrate = "Video Bitrate : {0:0.0} Mbps";
             public static string bodyClientGuidelineIntro = "How to connect from your mobile device :";
-            public static string bodyClientGuidelineStep1 = "1) Run Modoium app.";
             public static string foldoutClientInstall = "Not installed yet?";
             public static string bodyClientGuidelineStep2 = "2) Make sure your mobile device is connected to the same network as this computer.";
-            public static string bodyClientGuidelineStep3 = "3) Select your project from the list on Modoium app :";
             public static string bodyClientGuidelineStep4 = "4) Enter the verification code below if necessary :";
 
 #if UNITY_2021_3_OR_NEWER
+            public static string bodyClientGuidelineStep1 = "1) Run <b>Modoium</b> app.";
             public static string bodyClientInstallAndroid = "\u2022 Android : Get <a href=\"{0}\">Modoium</a> from Google Play Store";
             public static string bodyClientInstalliOS = "\u2022 iOS : Get <a href=\"{0}\">Modoium</a> from App Store";
             public static string bodyClientInstallQuest = "\u2022 Quest : <a href=\"{0}\">Download and install Modoium APK</a>";
+            public static string bodyClientGuidelineStep3 = "3) Select your project from the list on <b>Modoium</b> app :";
 #else
+            public static string modoium = "Modoium";
+            public static string bodyClientGuidelineStep1 = "1) Run Modoium app.";
             public static string bodyClientInstallAndroidPrefix = "\u2022 Android : Get ";
             public static string bodyClientInstallAndroidSuffix = " from Google Play Store";
             public static string bodyClientInstalliOSPrefix = "\u2022 iOS : Get ";
             public static string bodyClientInstalliOSSuffix = " from App Store";
             public static string bodyClientInstallQuestPrefix = "\u2022 Quest : ";
             public static string linkClientInstallQuest = "Download and install Modoium APK";
+            public static string bodyClientGuidelineStep3 = "3) Select your project from the list on Modoium app :";
 #endif
         }
     }    

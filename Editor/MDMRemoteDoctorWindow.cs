@@ -5,7 +5,7 @@ using UnityEditor;
 
 namespace Modoium.Service.Editor {
     public class MDMRemoteDoctorWindow : EditorWindow {
-        [MenuItem("Modoium/Open Doctor...", false, 101)]
+        //[MenuItem("Modoium/Open Doctor...", false, 101)]
         public static void OpenWindow() {
             GetWindow<MDMRemoteDoctorWindow>().titleContent = new GUIContent {
                 text = "Modoium Remote Doctor",
