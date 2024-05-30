@@ -7,9 +7,10 @@ using UnityEngine.UIElements;
 
 namespace Modoium.Service.Editor {
     internal class MDMRemoteStatusCoreConnectedView : VisualElement {
-        private static string ModoiumAndroidAppURL = "https://play.google.com/store/apps/details?id=com.microsoft.launcher";
-        private static string ModoiumiOSAppURL = "https://apps.apple.com/us/app/microsoft-start/id945416273";
-        private static string ModoiumQuestAppURL = "https://drive.google.com/file/d/1IGsdzlemllTAMkI7j7Pg0GPbNIwRbECJ/view?usp=sharing";
+        private static string ModoiumAndroidAppURL = "https://cloud.onairvr.io/modoium/modoium-app_0.8.3_b202405301.apk";
+        //private static string ModoiumAndroidAppURL = "https://play.google.com/store/apps/details?id=com.microsoft.launcher";
+        //private static string ModoiumiOSAppURL = "https://apps.apple.com/us/app/microsoft-start/id945416273";
+        //private static string ModoiumQuestAppURL = "https://drive.google.com/file/d/1IGsdzlemllTAMkI7j7Pg0GPbNIwRbECJ/view?usp=sharing";
 
         private Action<string> _onOpenUrl;
         private TextElement _bodyVideoBitrate;
@@ -174,11 +175,11 @@ namespace Modoium.Service.Editor {
 
             container.Add(new TextElement { text = Styles.bodyClientInstalliOSPrefix });
 
-            var button = new HyperLinkTextElement { text = Styles.modoium };
+            /* var button = new HyperLinkTextElement { text = Styles.modoium };
             button.RegisterCallback<MouseUpEvent>((evt) => _onOpenUrl(ModoiumiOSAppURL));
             container.Add(button);
 
-            container.Add(new TextElement { text = Styles.bodyClientInstalliOSSuffix });
+            container.Add(new TextElement { text = Styles.bodyClientInstalliOSSuffix }); */
 
             return container;
         }
@@ -188,9 +189,9 @@ namespace Modoium.Service.Editor {
 
             container.Add(new TextElement { text = Styles.bodyClientInstallQuestPrefix });
 
-            var button = new HyperLinkTextElement { text = Styles.linkClientInstallQuest };
+            /* var button = new HyperLinkTextElement { text = Styles.linkClientInstallQuest };
             button.RegisterCallback<MouseUpEvent>((evt) => _onOpenUrl(ModoiumQuestAppURL));
-            container.Add(button);
+            container.Add(button); */
 
             return container;
         }
@@ -206,18 +207,25 @@ namespace Modoium.Service.Editor {
 
 #if UNITY_2021_3_OR_NEWER
             public static string bodyClientGuidelineStep1 = "1) Run <b>Modoium</b> app.";
-            public static string bodyClientInstallAndroid = "\u2022 Android : Get <a href=\"{0}\">Modoium</a> from Google Play Store";
-            public static string bodyClientInstalliOS = "\u2022 iOS : Get <a href=\"{0}\">Modoium</a> from App Store";
-            public static string bodyClientInstallQuest = "\u2022 Quest : <a href=\"{0}\">Download and install Modoium APK</a>";
+            //public static string bodyClientInstallAndroid = "\u2022 Android : Get <a href=\"{0}\">Modoium</a> from Google Play Store";
+            public static string bodyClientInstallAndroid = "\u2022 Android : Download & Install <a href=\"{0}\">Modoium</a> app.";
+            //public static string bodyClientInstalliOS = "\u2022 iOS : Get <a href=\"{0}\">Modoium</a> from App Store";
+            public static string bodyClientInstalliOS = "\u2022 iOS : Not availble yet.";
+            //public static string bodyClientInstallQuest = "\u2022 Quest : <a href=\"{0}\">Download and install Modoium APK</a>";
+            public static string bodyClientInstallQuest = "\u2022 Quest : Not availble yet.";
             public static string bodyClientGuidelineStep3 = "3) Select your project from the list on <b>Modoium</b> app :";
 #else
             public static string modoium = "Modoium";
             public static string bodyClientGuidelineStep1 = "1) Run Modoium app.";
-            public static string bodyClientInstallAndroidPrefix = "\u2022 Android : Get ";
-            public static string bodyClientInstallAndroidSuffix = " from Google Play Store";
-            public static string bodyClientInstalliOSPrefix = "\u2022 iOS : Get ";
+            //public static string bodyClientInstallAndroidPrefix = "\u2022 Android : Get ";
+            //public static string bodyClientInstallAndroidSuffix = " from Google Play Store";
+            public static string bodyClientInstallAndroidPrefix = "\u2022 Android : Download & Install ";
+            public static string bodyClientInstallAndroidSuffix = " app.";
+            //public static string bodyClientInstalliOSPrefix = "\u2022 iOS : Get ";
+            public static string bodyClientInstalliOSPrefix = "\u2022 iOS : Not availble yet.";
             public static string bodyClientInstalliOSSuffix = " from App Store";
-            public static string bodyClientInstallQuestPrefix = "\u2022 Quest : ";
+            //public static string bodyClientInstallQuestPrefix = "\u2022 Quest : ";
+            public static string bodyClientInstallQuestPrefix = "\u2022 Quest : Not availble yet.";
             public static string linkClientInstallQuest = "Download and install Modoium APK";
             public static string bodyClientGuidelineStep3 = "3) Select your project from the list on Modoium app :";
 #endif
