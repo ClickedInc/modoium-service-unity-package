@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 namespace Modoium.Service.Editor {
     internal class MDMRemoteStatusNoRunningCoreView : VisualElement {
 #if UNITY_EDITOR_OSX
-        private static string ModoiumHubInstallerURL = "ms-windows-store://pdp?productid=xp89dcgq3k6vld";
+        private static string ModoiumHubInstallerURL = "https://apps.apple.com/app-bundle/microsoft-365/id1450038993";
 #else
         //private static string ModoiumHubInstallerURL = "ms-windows-store://pdp?productid=xp89dcgq3k6vld";
         private static string ModoiumHubInstallerURL = "https://cloud.onairvr.io/modoium/ModoiumHub-0.8.3.exe";
