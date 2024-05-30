@@ -149,11 +149,13 @@ namespace Modoium.Service.Editor {
         }
 
         private VisualElement createClientInstalliOS() {
-            return new TextElement { text = string.Format(Styles.bodyClientInstalliOS, ModoiumiOSAppURL) };
+            return new TextElement { text = Styles.bodyClientInstalliOS };
+            //return new TextElement { text = string.Format(Styles.bodyClientInstalliOS, ModoiumiOSAppURL) };
         }
 
         private VisualElement createClientInstallQuest() {
-            return new TextElement { text = string.Format(Styles.bodyClientInstallQuest, ModoiumQuestAppURL) };
+            return new TextElement { text = Styles.bodyClientInstallQuest };
+            //return new TextElement { text = string.Format(Styles.bodyClientInstallQuest, ModoiumQuestAppURL) };
         }
 #else
         private VisualElement createClientInstallAndroid() {
