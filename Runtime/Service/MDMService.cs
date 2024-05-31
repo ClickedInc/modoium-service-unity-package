@@ -121,7 +121,11 @@ namespace Modoium.Service {
         private void ensureAudioListenerConfigured() {
             if (_audioListener != null) { return; }
 
+#if UNITY_2023_1_OR_NEWER
             var audioListener = UnityEngine.Object.FindFirstObjectByType<AudioListener>();
+#else
+            var audioListener = UnityEngine.Object.FindObjectOfType<AudioListener>();
+#endif
             if (audioListener == null) { return; }
 
             _audioListener = audioListener.gameObject.GetComponent<MDMAudioListener>();
