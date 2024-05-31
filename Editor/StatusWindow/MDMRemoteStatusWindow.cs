@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor;
-using Codice.Client.Common;
 
 namespace Modoium.Service.Editor {
     public class MDMRemoteStatusWindow : EditorWindow {

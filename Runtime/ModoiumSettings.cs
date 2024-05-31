@@ -1,5 +1,6 @@
 using System.IO;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -98,7 +99,9 @@ namespace Modoium.Service {
             internal MDMEncodingPreset encodingPreset => _advancedSettingsEnabled ? _encodingPreset : MDMEncodingPreset.LowLatency;
             internal MDMEncodingQuality encodingQuality => _advancedSettingsEnabled ? _encodingQuality : MDMEncodingQuality.VeryHigh;
 #else
-            internal MDMCodec codecs => MDMCodec.All;
+            private bool isH264AvailableOnly => SystemInfo.processorType.Contains("Apple M") && RuntimeInformation.ProcessArchitecture == Architecture.X64;
+
+            internal MDMCodec codecs => isH264AvailableOnly ? MDMCodec.H264 : MDMCodec.All;
             internal MDMEncodingPreset encodingPreset => MDMEncodingPreset.LowLatency;
             internal MDMEncodingQuality encodingQuality => MDMEncodingQuality.VeryHigh;
 #endif

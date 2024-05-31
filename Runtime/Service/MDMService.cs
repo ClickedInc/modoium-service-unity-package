@@ -4,13 +4,7 @@ using System.IO;
 using System.Web;
 using UnityEngine;
 using System.Text.RegularExpressions;
-
-
-#if UNITY_EDITOR
-using Unity.Plastic.Newtonsoft.Json;
-#else
 using Newtonsoft.Json;
-#endif
 
 namespace Modoium.Service {
     internal class MDMService {

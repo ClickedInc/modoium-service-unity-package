@@ -143,7 +143,7 @@ namespace Modoium.Service.Editor {
             _verificationCode.text = code;
         }
 
-#if UNITY_2021_3_OR_NEWER
+#if UNITY_2022_3_OR_NEWER
         private VisualElement createClientInstallAndroid() {
             return new TextElement { text = string.Format(Styles.bodyClientInstallAndroid, ModoiumAndroidAppURL) };
         }
@@ -207,7 +207,7 @@ namespace Modoium.Service.Editor {
             public static string bodyClientGuidelineStep2 = "2) Make sure your mobile device is connected to the same network as this computer.";
             public static string bodyClientGuidelineStep4 = "4) Enter the verification code below if necessary :";
 
-#if UNITY_2021_3_OR_NEWER
+#if UNITY_2022_3_OR_NEWER
             public static string bodyClientGuidelineStep1 = "1) Run <b>Modoium</b> app.";
             //public static string bodyClientInstallAndroid = "\u2022 Android : Get <a href=\"{0}\">Modoium</a> from Google Play Store";
             public static string bodyClientInstallAndroid = "\u2022 Android : Download & Install <a href=\"{0}\">Modoium</a> app.";

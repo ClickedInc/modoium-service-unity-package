@@ -3,14 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
-#if UNITY_EDITOR
-using Unity.Plastic.Newtonsoft.Json;
-using Unity.Plastic.Newtonsoft.Json.Linq;
-#else
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-#endif
 
 namespace Modoium.Service {
     [JsonObject(MemberSerialization.OptIn)]

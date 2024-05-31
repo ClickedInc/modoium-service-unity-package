@@ -39,7 +39,7 @@ namespace Modoium.Service.Editor {
             return new TextElement { text = Styles.bodyText };
         }
 
-#if UNITY_2021_3_OR_NEWER
+#if UNITY_2022_3_OR_NEWER
         private VisualElement createInstallStatement() {
             return new TextElement { text = string.Format(Styles.bodyInstall, ModoiumHubInstallerURL) };
         }
@@ -58,7 +58,7 @@ namespace Modoium.Service.Editor {
 #endif
 
         private class Styles {
-#if UNITY_2021_3_OR_NEWER
+#if UNITY_2022_3_OR_NEWER
             public static string bodyText = "Please make sure <b>Modoium Hub</b> is installed and running.";
             //public static string bodyInstall = "\nNot installed yet? <a href=\"{0}\">Install Modoium Hub from App Store.</a>";
             public static string bodyInstall = "\nNot installed yet? <a href=\"{0}\">Download & Install Modoium Hub.</a>";

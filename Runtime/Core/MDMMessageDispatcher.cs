@@ -3,12 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
-
-#if UNITY_EDITOR
-using Unity.Plastic.Newtonsoft.Json;
-#else
 using Newtonsoft.Json;
-#endif
 
 namespace Modoium.Service {
     internal class MDMMessageDispatcher {
