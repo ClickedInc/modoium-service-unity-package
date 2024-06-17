@@ -107,7 +107,7 @@ namespace Modoium.Service {
             var touch = new Touch() {
                 fingerId = control,
                 type = TouchType.Direct,
-                deltaTime = Time.deltaTime,
+                deltaTime = Time.unscaledDeltaTime,
                 position = position,
                 radius = 1,
                 radiusVariance = 0,
@@ -213,7 +213,7 @@ namespace Modoium.Service {
                     _remainingToCreateEventSystem = TimeToWaitForEventSystem;
                 }
 
-                _remainingToCreateEventSystem -= Time.deltaTime;
+                _remainingToCreateEventSystem -= Time.unscaledDeltaTime;
                 if (_remainingToCreateEventSystem >= 0) { return; }
 
                 eventSystem = createEventSystem();

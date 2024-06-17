@@ -42,7 +42,7 @@ namespace Modoium.Service.Editor {
             _bodyDevice = new TextElement { text = string.Format(Styles.bodyDevice, string.Empty) };
             box.Add(_bodyDevice);
 
-            _bodyVideoBitrate = new TextElement { text = string.Format(Styles.bodyVideoBitrate, 0f) };
+            _bodyVideoBitrate = new TextElement { text = string.Format(Styles.bodyVideoBitrate, 0) };
             _bodyVideoBitrate.style.marginTop = 4;
             box.Add(_bodyVideoBitrate);
 
@@ -51,13 +51,13 @@ namespace Modoium.Service.Editor {
 
         private void updateInfo(float videoBitrate, string deviceName) {
             _bodyDevice.text = string.Format(Styles.bodyDevice, deviceName);
-            _bodyVideoBitrate.text = string.Format(Styles.bodyVideoBitrate, videoBitrate);
+            _bodyVideoBitrate.text = string.Format(Styles.bodyVideoBitrate, Mathf.RoundToInt(videoBitrate));
         }
 
         private class Styles {
             public static string bodyStatus = $"Device connected";
             public static string bodyDevice = "Device : {0}";
-            public static string bodyVideoBitrate = "Video Bitrate : {0:0.0} Mbps";
+            public static string bodyVideoBitrate = "Video Bitrate : {0} Mbps";
         }
     }
 }

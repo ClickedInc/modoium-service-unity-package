@@ -16,8 +16,8 @@ namespace Modoium.Service {
 
         public MDMServiceConfigurator() {
             if (string.IsNullOrEmpty(currentServiceName) == false &&
-                string.IsNullOrEmpty(ModoiumPlugin.serviceConfigurator_serviceName)) {
-                ModoiumPlugin.serviceConfigurator_serviceName = currentServiceName;
+                string.IsNullOrEmpty(ModoiumPlugin.serviceName)) {
+                ModoiumPlugin.serviceName = currentServiceName;
             }
             _lastAppliedServiceName = currentServiceName;
         }
@@ -26,7 +26,7 @@ namespace Modoium.Service {
             if (Application.isEditor == false ||
                 string.IsNullOrEmpty(currentServiceName)) { return; }
 
-            if (currentServiceName == ModoiumPlugin.serviceConfigurator_serviceName) {
+            if (currentServiceName == ModoiumPlugin.serviceName) {
                 _serviceNameInEdit = string.Empty;
                 _timeToApply = -1f;
                 return;
@@ -41,7 +41,7 @@ namespace Modoium.Service {
 
             applyConfigs();
 
-            ModoiumPlugin.serviceConfigurator_serviceName = currentServiceName;
+            ModoiumPlugin.serviceName = currentServiceName;
             _serviceNameInEdit = string.Empty;
             _timeToApply = -1f;
         }

@@ -38,8 +38,6 @@ namespace Modoium.Service {
     internal static class ModoiumPlugin {
         private const string LibName = "modoium";
 
-        private static StringBuilder _stringBuilder = new StringBuilder(2048);
-
 #if UNITY_XR_MANAGEMENT
     #if UNITY_EDITOR
         public static bool isXR {
@@ -62,35 +60,6 @@ namespace Modoium.Service {
 #else
         public static bool isXR => false;
 #endif
-
-        public static string hostName {
-            get {
-                _stringBuilder.Clear();
-                mdm_getHostName(_stringBuilder, _stringBuilder.Capacity);
-
-                return _stringBuilder.ToString();
-            }
-        }
-
-        public static string verificationCode {
-            get {
-                _stringBuilder.Clear();
-                mdm_getVerificationCode(_stringBuilder, _stringBuilder.Capacity);
-
-                return _stringBuilder.ToString();
-            }
-        }
-
-        public static float videoBitrate => mdm_getVideoBitrate() / 1000000.0f;
-
-        public static string clientUserAgent {
-            get {
-                _stringBuilder.Clear();
-                mdm_getClientUserAgent(_stringBuilder, _stringBuilder.Capacity);
-
-                return _stringBuilder.ToString();
-            }
-        }
 
         public static MDMServiceState serviceState => (MDMServiceState)mdm_getServiceState();
 
@@ -252,10 +221,6 @@ namespace Modoium.Service {
 
         [DllImport(LibName)] private static extern int mdm_getAvailability();
         [DllImport(LibName)] private static extern void mdm_setAvailability(int value);
-        [DllImport(LibName)] private static extern void mdm_getHostName(StringBuilder outName, int maxLength);
-        [DllImport(LibName)] private static extern void mdm_getVerificationCode(StringBuilder outCode, int maxLength);
-        [DllImport(LibName)] private static extern long mdm_getVideoBitrate();
-        [DllImport(LibName)] private static extern void mdm_getClientUserAgent(StringBuilder outValue, int maxLength);
         [DllImport(LibName)] private static extern int mdm_getServiceState();
         [DllImport(LibName)] private static extern IntPtr mdm_loadEncoderDevice_renderThread_func();
         [DllImport(LibName)] private static extern IntPtr mdm_start_renderThread_func();
@@ -374,20 +339,63 @@ namespace Modoium.Service {
         [DllImport(LibName)] private static extern void mdm_setVolume(float[] vertices, int vertexCount, int[] indices, int indexCount);
         [DllImport(LibName)] private static extern void mdm_setChromaKeyCamera(Vector3D keyColor, float similarity, float smoothness, float spill);
 
-        // cache for service configurator
-        public static string serviceConfigurator_serviceName {
+        // data caches
+        private static StringBuilder _stringBuilder = new StringBuilder(2048);
+
+        public static string hostName {
             get {
-                _stringBuilder.Clear(); 
-                mdm_serviceConfigurator_getServiceName(_stringBuilder, _stringBuilder.Capacity);
+                _stringBuilder.Clear();
+                mdm_getHostName(_stringBuilder, _stringBuilder.Capacity);
 
                 return _stringBuilder.ToString();
             }
-            set {
-                mdm_serviceConfigurator_setServiceName(value);
-            }
+            set { mdm_setHostName(value); }
         }
 
-        [DllImport(LibName)] private static extern void mdm_serviceConfigurator_setServiceName(string name);
-        [DllImport(LibName)] private static extern void mdm_serviceConfigurator_getServiceName(StringBuilder outName, int maxLength);
+        public static string verificationCode {
+            get {
+                _stringBuilder.Clear();
+                mdm_getVerificationCode(_stringBuilder, _stringBuilder.Capacity);
+
+                return _stringBuilder.ToString();
+            }
+            set { mdm_setVerificationCode(value); }
+        }
+
+        public static long videoBitrate {
+            get { return mdm_getVideoBitrate(); }
+            set { mdm_setVideoBitrate(value); }
+        }
+
+        public static string clientUserAgent {
+            get {
+                _stringBuilder.Clear();
+                mdm_getClientUserAgent(_stringBuilder, _stringBuilder.Capacity);
+
+                return _stringBuilder.ToString();
+            }
+            set { mdm_setClientUserAgent(value); }
+        }
+
+        public static string serviceName {
+            get {
+                _stringBuilder.Clear(); 
+                mdm_getServiceName(_stringBuilder, _stringBuilder.Capacity);
+
+                return _stringBuilder.ToString();
+            }
+            set { mdm_setServiceName(value); }
+        }
+
+        [DllImport(LibName)] private static extern void mdm_getHostName(StringBuilder outName, int maxLength);
+        [DllImport(LibName)] private static extern void mdm_setHostName(string name);
+        [DllImport(LibName)] private static extern void mdm_getVerificationCode(StringBuilder outCode, int maxLength);
+        [DllImport(LibName)] private static extern void mdm_setVerificationCode(string code);
+        [DllImport(LibName)] private static extern long mdm_getVideoBitrate();
+        [DllImport(LibName)] private static extern void mdm_setVideoBitrate(long bitrate);
+        [DllImport(LibName)] private static extern void mdm_getClientUserAgent(StringBuilder outUserAgent, int maxLength);
+        [DllImport(LibName)] private static extern void mdm_setClientUserAgent(string userAgent);
+        [DllImport(LibName)] private static extern void mdm_getServiceName(StringBuilder outName, int maxLength);
+        [DllImport(LibName)] private static extern void mdm_setServiceName(string name);
     }
 }

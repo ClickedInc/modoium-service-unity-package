@@ -103,8 +103,8 @@ namespace Modoium.Service.Editor {
                 _verificationCode = service.verificationCode;
                 changed = true;
             }
-            if (_videoBitrate != service.videoBitrate) {
-                _videoBitrate = service.videoBitrate;
+            if (_videoBitrate != service.videoBitrateMbps) {
+                _videoBitrate = service.videoBitrateMbps;
                 changed = true;
             }
             if (_connectedDeviceName != service.connectedDeviceName) {

@@ -31,6 +31,7 @@ namespace Modoium.Service {
         public const string NameAmpOpened = "amp-opened";
         public const string NameAmpClosed = "amp-closed";
         public const string NameClientAppData = "client-app-data";
+        public const string NameCoreEvent = "core-event";
     }
 
     internal class MDMMessageCoreConnected : MDMMessage {}
@@ -101,6 +102,83 @@ namespace Modoium.Service {
 
         public MDMMessageClientAppData(object body) {
             appData = new MDMAppData(body);
+        }
+    }
+
+    internal class MDMMessageCoreEvent : MDMMessage {
+        public const string SrcAdmin = "admin";
+        public const string SrcClient = "client";
+        public const string NameConnected = "connected";
+        public const string NameConfigChanged = "config.changed";
+        public const string NameSetConfig = "set.config";
+
+        public static MDMMessageCoreEvent Parse(object body) {
+            var evt = new MDMMessageCoreEvent(body);
+
+            switch (evt.src) {
+                case SrcAdmin:
+                    switch (evt.name) {
+                        case NameConfigChanged:
+                            return new MDMMessageCoreEventConfigChanged(body);
+                        case NameSetConfig:
+                            return new MDMMessageCoreEventSetConfig(body);
+                    }
+                    break;
+                case SrcClient:
+                    switch (evt.name) {
+                        case NameConnected:
+                            return new MDMMessageCoreEventClientConnected(body);
+                    }
+                    break;
+            }
+
+            return null;
+        }
+
+        protected JObject content { get; private set; }
+
+        public string src { get; private set; }
+        public string name { get; private set; }
+
+        public MDMMessageCoreEvent(object body) {
+            Debug.Assert(body is JObject);
+            var dict = body as JObject;
+
+            src = dict.Value<string>("src");
+
+            var evt = dict.Value<JObject>("event");
+            name = evt.Value<string>("name");
+            content = evt.Value<JObject>("content");
+        }
+    }
+
+    internal class MDMMessageCoreEventClientConnected : MDMMessageCoreEvent {
+        public string userAgent { get; private set; }
+
+        public MDMMessageCoreEventClientConnected(object body) : base(body) {
+            userAgent = content.Value<string>("userAgent");
+        }
+    }
+
+    internal class MDMMessageCoreEventConfigChanged : MDMMessageCoreEvent {
+        public string hostname;
+        public string verificationCode;
+
+        public MDMMessageCoreEventConfigChanged(object body) : base(body) {
+            if (content.ContainsKey("hostName")) {
+                hostname = content.Value<string>("hostName");
+            }
+            if (content.ContainsKey("verificationCode")) {
+                verificationCode = content.Value<string>("verificationCode");
+            }
+        }
+    }    
+
+    internal class MDMMessageCoreEventSetConfig : MDMMessageCoreEvent {
+        public long bitrate { get; private set; }
+
+        public MDMMessageCoreEventSetConfig(object body) : base(body) {
+            bitrate = content.Value<long>("bitrate");
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Modoium.Service {
             var encodeFrameRate = Mathf.Min(displayConfig.framerate, _maxFramerate);
             Application.targetFrameRate = Mathf.RoundToInt(Mathf.Min(encodeFrameRate * 2, _maxFramerate));
 
-            _lastFrameTime = Time.timeAsDouble;
+            _lastFrameTime = Time.unscaledTimeAsDouble;
             var frameInterval = 1.0 / encodeFrameRate;
             var resetFrameTimeThreshold = 0.18;
 
@@ -55,10 +55,10 @@ namespace Modoium.Service {
                 yield return new WaitForEndOfFrame();
                 if (_running == false) { break; }
 
-                var elapsed = Time.timeAsDouble - _lastFrameTime;
+                var elapsed = Time.unscaledTimeAsDouble - _lastFrameTime;
                 if (elapsed < frameInterval) { continue; }
 
-                _lastFrameTime = elapsed >= resetFrameTimeThreshold ? Time.timeAsDouble : 
+                _lastFrameTime = elapsed >= resetFrameTimeThreshold ? Time.unscaledTimeAsDouble : 
                                                                       (_lastFrameTime + frameInterval);
 
                 _inputProvider.Update();

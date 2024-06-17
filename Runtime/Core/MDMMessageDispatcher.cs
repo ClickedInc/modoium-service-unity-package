@@ -61,6 +61,19 @@ namespace Modoium.Service {
                     case MDMMessage.NameClientAppData:
                         onMessageReceived?.Invoke(new MDMMessageClientAppData(body));
                         break;
+                    case MDMMessage.NameCoreEvent:
+                        var coreEvt = MDMMessageCoreEvent.Parse(body);
+
+                        if (coreEvt is MDMMessageCoreEventConfigChanged) {
+                            onMessageReceived?.Invoke(coreEvt as MDMMessageCoreEventConfigChanged);
+                        }
+                        else if (coreEvt is MDMMessageCoreEventSetConfig) {
+                            onMessageReceived?.Invoke(coreEvt as MDMMessageCoreEventSetConfig);
+                        }
+                        else if (coreEvt is MDMMessageCoreEventClientConnected) {
+                            onMessageReceived?.Invoke(coreEvt as MDMMessageCoreEventClientConnected);
+                        }
+                        break;
                 }
             }
             return evt;

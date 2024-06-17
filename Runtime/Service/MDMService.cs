@@ -31,7 +31,7 @@ namespace Modoium.Service {
         internal string serviceName => _serviceConfigurator.serviceName;
         internal string hostName => ModoiumPlugin.hostName;
         internal string verificationCode => ModoiumPlugin.verificationCode;
-        internal float videoBitrate => ModoiumPlugin.videoBitrate;
+        internal float videoBitrateMbps => ModoiumPlugin.videoBitrate / 1000000.0f;
         internal MDMServiceState state => ModoiumPlugin.serviceState;
         internal MDMVideoDesc remoteViewDesc { get; private set; }
         internal MDMInputDesc remoteInputDesc { get; private set; }
@@ -176,6 +176,15 @@ namespace Modoium.Service {
             else if (message is MDMMessageClientAppData clientAppData) {
                 onClientAppData(clientAppData);
             }
+            else if (message is MDMMessageCoreEventConfigChanged coreConfigChanged) {
+                onCoreConfigChanged(coreConfigChanged);
+            }
+            else if (message is MDMMessageCoreEventSetConfig coreSetConfig) {
+                onCoreSetConfig(coreSetConfig);
+            }
+            else if (message is MDMMessageCoreEventClientConnected coreClientConnected) {
+                onCoreClientConnected(coreClientConnected);
+            }
         }
 
         private void onCoreConnected(MDMMessageCoreConnected message) {
@@ -218,6 +227,23 @@ namespace Modoium.Service {
 
         private void onClientAppData(MDMMessageClientAppData message) {
             setClientAppData(message.appData);
+        }
+
+        private void onCoreConfigChanged(MDMMessageCoreEventConfigChanged message) {
+            if (string.IsNullOrEmpty(message.hostname) == false) {
+                ModoiumPlugin.hostName = message.hostname;
+            }
+            if (string.IsNullOrEmpty(message.verificationCode) == false) {
+                ModoiumPlugin.verificationCode = message.verificationCode;
+            }
+        }
+
+        private void onCoreSetConfig(MDMMessageCoreEventSetConfig message) {
+            ModoiumPlugin.videoBitrate = message.bitrate;
+        }
+
+        private void onCoreClientConnected(MDMMessageCoreEventClientConnected message) {
+            ModoiumPlugin.clientUserAgent = message.userAgent;
         }
 
         private void setClientAppData(MDMAppData appData) {

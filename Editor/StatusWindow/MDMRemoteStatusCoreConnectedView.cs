@@ -60,7 +60,7 @@ namespace Modoium.Service.Editor {
             var box = new Box().Padding(4);
             box.style.marginTop = 4;
 
-            _bodyVideoBitrate = new TextElement { text = string.Format(Styles.bodyVideoBitrate, 0f) };
+            _bodyVideoBitrate = new TextElement { text = string.Format(Styles.bodyVideoBitrate, 0) };
             box.Add(_bodyVideoBitrate);
 
             return box;
@@ -131,7 +131,7 @@ namespace Modoium.Service.Editor {
         }
 
         private void updateVideoBitrate(float bitrate) {
-            _bodyVideoBitrate.text = string.Format(Styles.bodyVideoBitrate, bitrate);
+            _bodyVideoBitrate.text = string.Format(Styles.bodyVideoBitrate, Mathf.RoundToInt(bitrate));
         }
 
         private void updateServiceInfo(string hostname, string servname) {
@@ -201,7 +201,7 @@ namespace Modoium.Service.Editor {
 
         private class Styles {
             public static string bodyStatus = $"Modoium Hub connected";
-            public static string bodyVideoBitrate = "Video Bitrate : {0:0.0} Mbps";
+            public static string bodyVideoBitrate = "Video Bitrate : {0} Mbps";
             public static string bodyClientGuidelineIntro = "How to connect from your mobile device :";
             public static string foldoutClientInstall = "Not installed yet?";
             public static string bodyClientGuidelineStep2 = "2) Make sure your mobile device is connected to the same network as this computer.";
