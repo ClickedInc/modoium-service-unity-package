@@ -145,7 +145,7 @@ namespace Modoium.Service {
         public static extern void UpdateService();
 
         [DllImport(LibName, EntryPoint = "mdm_reopenService")]
-        public static extern void ReopenService(string serviceName, string userdata);
+        public static extern void ReopenService(string serviceName, string userdata, int corePort);
 
         [DllImport(LibName, EntryPoint = "mdm_checkMessageQueue")]
         public static extern bool CheckMessageQueue(out IntPtr source, out IntPtr data, out int length);

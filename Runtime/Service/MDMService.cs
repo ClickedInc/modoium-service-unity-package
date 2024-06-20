@@ -1,10 +1,10 @@
 using System;
 using System.Collections;
 using System.IO;
-using System.Web;
 using UnityEngine;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using UnityEngine.Assertions;
 
 namespace Modoium.Service {
     internal class MDMService {
@@ -22,6 +22,7 @@ namespace Modoium.Service {
         private MDMDisplayRenderer _displayRenderer;
         private MDMDisplayConfigurator _displayConfigurator;
         private MDMInputProvider _inputProvider;
+        private ModoiumCore _embeddedCore = new ModoiumCore();
         private MDMServiceAvailability _availability = MDMServiceAvailability.Unspecified;
         private float _timeToReopenService = -1f;
         private Regex _regexDeviceName = new Regex(@"Modoium/[^\s]+ \((.+);.+\)");
@@ -33,6 +34,7 @@ namespace Modoium.Service {
         internal string verificationCode => ModoiumPlugin.verificationCode;
         internal float videoBitrateMbps => ModoiumPlugin.videoBitrate / 1000000.0f;
         internal MDMServiceState state => ModoiumPlugin.serviceState;
+        internal bool embeddedCoreRunning => _embeddedCore.running;
         internal MDMVideoDesc remoteViewDesc { get; private set; }
         internal MDMInputDesc remoteInputDesc { get; private set; }
         internal bool remoteViewConnected => coreConnected && remoteViewDesc != null;
@@ -76,8 +78,15 @@ namespace Modoium.Service {
             if (_availability != MDMServiceAvailability.Available) { return; }
 
             ModoiumPlugin.ShutdownService();
-
             _messageDispatcher.onMessageReceived -= onMDMMessageReceived;
+
+            _embeddedCore.Shutdown();
+        }
+
+        public void SearchForModoiumHub() {
+            if (embeddedCoreRunning == false) { return; }
+
+            _embeddedCore.Shutdown();
         }
 
         public void Play() {
@@ -146,7 +155,9 @@ namespace Modoium.Service {
             if (Time.realtimeSinceStartup < _timeToReopenService) { return; }
 
             var settings = ModoiumSettings.instance;
-            ModoiumPlugin.ReopenService(_serviceConfigurator.serviceName, settings.serviceUserdata);
+            ModoiumPlugin.ReopenService(_serviceConfigurator.serviceName, 
+                                        settings.serviceUserdata,
+                                        _embeddedCore.running ? _embeddedCore.port : 0);
 
             _timeToReopenService = -1f;
         }
@@ -196,6 +207,11 @@ namespace Modoium.Service {
             if (failureCode != MDMFailureCode.CoreNotFound) {
                 Debug.LogWarning($"[modoium] core connection failed: {failureCode} (status code {message.statusCode}): {message.reason}");
             }
+
+#if UNITY_EDITOR
+            _embeddedCore.Startup();
+            Debug.Assert(_embeddedCore.running);
+#endif
         }
 
         private void onCoreDisconnected(MDMMessageCoreDisconnected message) {

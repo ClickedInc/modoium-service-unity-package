@@ -10,36 +10,59 @@ namespace Modoium.Service.Editor {
             Warning
         }
 
-        public MDMMessageBox() {
+        public MDMMessageBox(VisualElement parent, MDMRemoteIssue issue) {
             this.Padding(6);
             style.flexDirection = FlexDirection.Row;
+            style.alignItems = Align.Center;
             style.marginTop = style.marginBottom = 10;
             style.minHeight = 44;
+
+            Add(createIcon(issue));
+            Add(createBody(issue));
+
+            parent.Add(this);
         }
 
-        public void SetContent(Icon icon, string body) {
-            Clear();
-
-            Add(createIcon(icon));
-            Add(createBody(body));
-        }
-
-        private VisualElement createIcon(Icon icon) {
-            var element = new VisualElement();
-            element.style.width = element.style.height = 32;
-            element.style.backgroundImage = icon switch {
-                Icon.Warning => EditorGUIUtility.IconContent("Warning@2x").image as Texture2D,
+        private VisualElement createIcon(MDMRemoteIssue issue) {
+            var icon = issue.level switch {
+                MDMRemoteIssue.Level.Info => "console.infoicon.sml",
+                MDMRemoteIssue.Level.Warning => "console.warnicon.sml",
                 _ => null
             };
+
+            var element = new VisualElement();
+            element.style.width = element.style.height = 16;
+            element.style.marginRight = 6;
+            element.style.backgroundImage = string.IsNullOrEmpty(icon) == false ? 
+                EditorGUIUtility.IconContent(icon).image as Texture2D : null;
 
             return element;
         }
 
-        private VisualElement createBody(string body) {
+        private VisualElement createBody(MDMRemoteIssue issue) {
             var container = new VisualElement().FillParent();
             container.style.justifyContent = Justify.Center;
+
+            var message = new TextElement { text = issue.message };
+            message.style.flexWrap = Wrap.Wrap;
+            container.Add(message);
             
-            container.Add(new TextElement { text = body });
+            var actions = issue.actions;
+            if (actions != null && actions.Length > 0) {
+                var actionContainer = new VisualElement();
+                actionContainer.style.flexDirection = FlexDirection.Row;
+                actionContainer.style.flexWrap = Wrap.Wrap;
+                actionContainer.style.marginTop = 6;
+                actionContainer.style.justifyContent = Justify.FlexStart;
+
+                foreach (var (label, action) in actions) {
+                    var button = new Button { text = label };
+                    button.clicked += action;
+                    actionContainer.Add(button);
+                }
+
+                container.Add(actionContainer);
+            }
 
             return container;
         }
