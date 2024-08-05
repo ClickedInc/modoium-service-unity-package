@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Modoium.Service {
     internal class ModoiumCore {
-#if UNITY_EDITOR_OSX
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
         private const string LibName = "modoiumCore";
 #else
         private const string LibName = "modoium-core";
