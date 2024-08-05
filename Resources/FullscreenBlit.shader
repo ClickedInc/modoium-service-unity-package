@@ -34,11 +34,12 @@ Shader "Modoium/Fullscreen Blit"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
+            uniform float4x4 _Rotation;
 
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.vertex = mul(_Rotation, UnityObjectToClipPos(v.vertex));
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 return o;
             }

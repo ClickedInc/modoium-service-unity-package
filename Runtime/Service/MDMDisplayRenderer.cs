@@ -7,6 +7,8 @@ using System;
 
 namespace Modoium.Service {
     internal class MDMDisplayRenderer {
+        private MDMService _owner;
+        private MDMDisplayRotation _rotation;
         private float _maxFramerate;
         private MonoBehaviour _driver;
         private CommandBuffer _commandBuffer;
@@ -16,32 +18,34 @@ namespace Modoium.Service {
         private bool _running;
         private double _lastFrameTime;
 
-        public MDMDisplayRenderer(float maxFramerate, MonoBehaviour driver = null) {
+        public MDMDisplayRenderer(MDMService owner, MDMDisplayRotation rotation, float maxFramerate, MonoBehaviour driver = null) {
+            _owner = owner;
+            _rotation = rotation;
             _maxFramerate = maxFramerate;
             _driver = driver;
             _commandBuffer = new CommandBuffer();
         }
 
-        public void Start(MDMInputProvider inputProvider, MDMVideoDesc displayConfig) {
+        public void Start(MDMInputProvider inputProvider) {
             if (ModoiumPlugin.isXR || _running) { return; }
             _running = true;
 
             if (_blitMaterial == null) {
                 _blitMaterial = new Material(Shader.Find("Modoium/Fullscreen Blit"));
             }
-            _swapChain = new SwapChain(displayConfig, _blitMaterial);
+            _swapChain = new SwapChain(_owner.remoteViewDesc, _blitMaterial);
             
             _inputProvider = inputProvider;
-            startCoroutine(renderLoop(displayConfig));
+            startCoroutine(renderLoop());
         }
 
         public void Stop() {
             _running = false;
         }
 
-        private IEnumerator renderLoop(MDMVideoDesc displayConfig) {
+        private IEnumerator renderLoop() {
             var prevFrameRate = Application.targetFrameRate;
-            var encodeFrameRate = Mathf.Min(displayConfig.framerate, _maxFramerate);
+            var encodeFrameRate = Mathf.Min(_owner.remoteViewDesc.framerate, _maxFramerate);
             Application.targetFrameRate = Mathf.RoundToInt(Mathf.Min(encodeFrameRate * 2, _maxFramerate));
 
             _lastFrameTime = Time.unscaledTimeAsDouble;
@@ -61,6 +65,9 @@ namespace Modoium.Service {
                 _lastFrameTime = elapsed >= resetFrameTimeThreshold ? Time.unscaledTimeAsDouble : 
                                                                       (_lastFrameTime + frameInterval);
 
+                var remoteViewDesc = _owner.remoteViewDesc;
+                var remoteInputDesc = _owner.remoteInputDesc;
+
                 _inputProvider.Update();
                 ModoiumPlugin.RenderUpdate(_commandBuffer);
 
@@ -69,7 +76,12 @@ namespace Modoium.Service {
                 }
 
                 ModoiumPlugin.RenderPreRender(_commandBuffer);
-                _swapChain.CopyFrameBuffer(_commandBuffer, out var framebufferIndex, out var aspect);
+                _swapChain.CopyFrameBuffer(_commandBuffer, 
+                                           remoteViewDesc, 
+                                           remoteInputDesc,
+                                           _rotation, 
+                                           out var framebufferIndex, 
+                                           out var aspect);
                 ModoiumPlugin.RenderPostRender(_commandBuffer, framebufferIndex, aspect);
 
                 flushCommandBuffer(_commandBuffer);
@@ -117,32 +129,45 @@ namespace Modoium.Service {
                 }
             }
 
-            public SwapChain(MDMVideoDesc displayConfig, Material blitMaterial) {
+            public SwapChain(MDMVideoDesc remoteViewDesc, Material blitMaterial) {
                 _blitMaterial = blitMaterial;
                 _textures = new RenderTexture[Length];
                 _framebufferArray = new FramebufferArray(Length);
                 nativeFramebufferArray = Marshal.AllocHGlobal(_framebufferArray.count * IntPtr.Size + sizeof(int));
 
-                reallocate(displayConfig);
+                reallocate(remoteViewDesc);
             }
 
-            public void CopyFrameBuffer(CommandBuffer commandBuffer, out int framebufferIndex, out float aspect) {
-                var displaySize = (Display.main.renderingWidth, Display.main.renderingHeight);
-                var texture = _textures[_cursor];
+            public void CopyFrameBuffer(CommandBuffer commandBuffer, 
+                                        MDMVideoDesc remoteViewDesc,
+                                        MDMInputDesc remoteInputDesc,
+                                        MDMDisplayRotation rotation, 
+                                        out int framebufferIndex, 
+                                        out float aspect) {
+                var fbtexture = _textures[_cursor];
+                var blitTransform = rotation.EvalFramebufferBlitTransform(
+                    (Display.main.renderingWidth, Display.main.renderingHeight),
+                    (remoteViewDesc.viewWidth, remoteViewDesc.viewHeight),
+                    remoteInputDesc.screenRotation,
+                    (fbtexture.width, fbtexture.height)
+                );
 
-                if (displaySize.renderingWidth == texture.width && displaySize.renderingHeight == texture.height) {
+                if (blitTransform.rotation == Matrix4x4.identity && 
+                    blitTransform.aspect == 0) {
                     aspect = 0;
-                    commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, texture);
+                    commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, fbtexture);
                 }
                 else {
-                    aspect = (float)displaySize.renderingWidth / displaySize.renderingHeight;
+                    aspect = blitTransform.aspect;
+
+                    _blitMaterial.SetMatrix("_Rotation", blitTransform.rotation);
 
                     if (_blitBufferTexture != null) {
                         commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, _blitBufferTexture);
-                        commandBuffer.Blit(_blitBufferTexture, texture, _blitMaterial);
+                        commandBuffer.Blit(_blitBufferTexture, fbtexture, _blitMaterial);
                     }
                     else {
-                        commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, texture, _blitMaterial);
+                        commandBuffer.Blit(BuiltinRenderTextureType.CurrentActive, fbtexture, _blitMaterial);
                     }
                 }
 
@@ -163,11 +188,11 @@ namespace Modoium.Service {
                 Marshal.FreeHGlobal(nativeFramebufferArray);
             }
 
-            private void reallocate(MDMVideoDesc displayConfig) {
+            private void reallocate(MDMVideoDesc remoteViewDesc) {
                 for (var index = 0; index < _textures.Length; index++) {
                     _textures[index]?.Release();
 
-                    _textures[index] = createTexture(displayConfig.videoWidth, displayConfig.videoHeight);
+                    _textures[index] = createTexture(remoteViewDesc.videoWidth, remoteViewDesc.videoHeight);
                     _framebufferArray.framebuffers[index] = _textures[index].GetNativeTexturePtr();
                 }
 
@@ -175,7 +200,7 @@ namespace Modoium.Service {
 
                 // workaround: blitting framebuffer to render texture with material does not work, so should use buffer texture
                 if (Application.isEditor == false) {
-                    _blitBufferTexture = createTexture(displayConfig.contentWidth, displayConfig.contentHeight);
+                    _blitBufferTexture = createTexture(remoteViewDesc.videoWidth, remoteViewDesc.videoHeight);
                 }
 
                 _cursor = 0;

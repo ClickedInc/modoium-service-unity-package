@@ -19,6 +19,7 @@ namespace Modoium.Service {
         private MDMAudioListener _audioListener;
         private MDMAppData _clientAppData;
         private MDMServiceConfigurator _serviceConfigurator;
+        private MDMDisplayRotation _displayRotation;
         private MDMDisplayRenderer _displayRenderer;
         private MDMDisplayConfigurator _displayConfigurator;
         private MDMInputProvider _inputProvider;
@@ -54,9 +55,10 @@ namespace Modoium.Service {
             _app = app;
             _messageDispatcher = new MDMMessageDispatcher();
             _serviceConfigurator = new MDMServiceConfigurator();
-            _displayRenderer = new MDMDisplayRenderer(MaxFrameRate, app as MonoBehaviour);
-            _displayConfigurator = new MDMDisplayConfigurator(this);
-            _inputProvider = new MDMInputProvider(this);
+            _displayRotation = new MDMDisplayRotation();
+            _displayConfigurator = new MDMDisplayConfigurator(this, _displayRotation);
+            _displayRenderer = new MDMDisplayRenderer(this, _displayRotation, MaxFrameRate, app as MonoBehaviour);
+            _inputProvider = new MDMInputProvider(this, _displayRotation);
  
             _messageDispatcher.onMessageReceived += onMDMMessageReceived;
         }
@@ -92,7 +94,7 @@ namespace Modoium.Service {
         public void Play() {
             if (remoteViewConnected == false) { return; } 
 
-            _displayRenderer.Start(_inputProvider, remoteViewDesc);
+            _displayRenderer.Start(_inputProvider);
             requestPlay();
         }
 

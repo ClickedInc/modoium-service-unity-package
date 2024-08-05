@@ -7,6 +7,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Modoium.Service {
+    public enum MDMScreenRotation {
+        Unspecified = -1,
+        Portrait = 0,
+        LandscapeLeft = 1,
+        PortraitUpsideDown = 2,
+        LandscapeRight = 3
+    }
+
     [JsonObject(MemberSerialization.OptIn)]
     public class MDMAppData {
         [JsonProperty] private MDMMediaDesc[] medias;
@@ -114,32 +122,36 @@ namespace Modoium.Service {
         }
 
         [JsonProperty] private ImageAttr[] imageattr;
-        [JsonProperty] private float frameRate;
-        [JsonProperty] private Bitrate bitRate;
+        [JsonProperty("max-width")] private int maxWidth;
+        [JsonProperty("max-height")] private int maxHeight;
+        [JsonProperty("max-fps")] private float maxFps;
+        [JsonProperty("max-br")] private long maxBitrate;
         [JsonProperty] private string direction;
         [JsonProperty] private Xfmtp xfmtp;
 
-        internal int contentWidth => imageattr[0].width;
-        internal int contentHeight => imageattr[0].height;
-        internal int videoWidth => imageattr[0].x;
-        internal int videoHeight => imageattr[0].y;
-        internal float framerate => frameRate;
-        internal long bitrate => bitRate.max;
+        internal int viewWidth => imageattr != null && imageattr.Length > 0 ? imageattr[0].x : maxWidth;
+        internal int viewHeight => imageattr != null && imageattr.Length > 0 ? imageattr[0].y : maxHeight;
+        internal int videoWidth => maxWidth;
+        internal int videoHeight => maxHeight;
+        internal float framerate => maxFps;
+        internal long bitrate => maxBitrate;
         internal string[] codecs => accept;
         internal bool useMPEG4BitstreamFormat => xfmtp.useSizePrefix;
 
         internal MDMVideoDesc(string[] codecs, 
-                              int width, 
-                              int height, 
-                              float sampleAspect,
+                              int contentWidth, 
+                              int contentHeight, 
+                              int videoWidth,
+                              int videoHeight,
                               float framerate,
-                              long startBitrate,
                               long maxBitrate) : base("video", codecs) { 
             imageattr = new ImageAttr[] {
-                new ImageAttr { x = width, y = height, sar = sampleAspect }
+                new ImageAttr { x = contentWidth, y = contentHeight }
             };
-            frameRate = framerate;
-            bitRate = new Bitrate { start = startBitrate, max = maxBitrate };
+            maxWidth = videoWidth;
+            maxHeight = videoHeight;
+            maxFps = framerate;
+            this.maxBitrate = maxBitrate;
             direction = "recvonly";
             xfmtp = new Xfmtp { useSizePrefix = false };
         }
@@ -148,24 +160,29 @@ namespace Modoium.Service {
             Debug.Assert(obj is JObject);
             var dict = obj as JObject;
 
-            Debug.Assert(dict.ContainsKey("imageattr"));
-            imageattr = dict.Value<JArray>("imageattr").Select((iter) => { 
-                return new ImageAttr { 
-                    x = iter.Value<int>("x"), 
-                    y = iter.Value<int>("y"),
-                    sar = iter.Value<float>("sar")
-                }; 
-            }).ToArray();
+            if (dict.ContainsKey("imageattr")) {
+                imageattr = dict.Value<JArray>("imageattr").Select((iter) => { 
+                    return new ImageAttr { 
+                        x = iter.Value<int>("x"), 
+                        y = iter.Value<int>("y")
+                    }; 
+                }).ToArray();
+            }
+            else {
+                imageattr = null;
+            }
 
-            Debug.Assert(dict.ContainsKey("frameRate"));
-            frameRate = dict.Value<float>("frameRate");
+            Debug.Assert(dict.ContainsKey("max-width"));
+            maxWidth = dict.Value<int>("max-width");
 
-            Debug.Assert(dict.ContainsKey("bitRate"));
-            var bitrate = dict.Value<JObject>("bitRate");
-            bitRate = new Bitrate { 
-                start = bitrate.Value<long>("start"),
-                max = bitrate.Value<long>("max")
-            };
+            Debug.Assert(dict.ContainsKey("max-height"));
+            maxHeight = dict.Value<int>("max-height");
+
+            Debug.Assert(dict.ContainsKey("max-fps"));
+            maxFps = dict.Value<float>("max-fps");
+
+            Debug.Assert(dict.ContainsKey("max-br"));
+            maxBitrate = dict.Value<long>("max-br");
 
             Debug.Assert(dict.ContainsKey("direction"));
             direction = dict.Value<string>("direction");
@@ -181,16 +198,6 @@ namespace Modoium.Service {
         private struct ImageAttr {
             [JsonProperty] public int x;
             [JsonProperty] public int y;
-            [JsonProperty] public float sar;
-
-            public int width => x;
-            public int height => sar > 0 && sar != 1 ? Mathf.RoundToInt(y / sar) : y;
-        }
-
-        [JsonObject(MemberSerialization.OptIn)]
-        private struct Bitrate {
-            [JsonProperty] public long start;
-            [JsonProperty] public long max;
         }
 
         [JsonObject(MemberSerialization.OptIn)]
@@ -206,12 +213,10 @@ namespace Modoium.Service {
         public MDMStereoVideoDesc(string[] codecs, 
                                   int width, 
                                   int height, 
-                                  float sampleAspect,
                                   float framerate,
-                                  long startBitrate,
                                   long maxBitrate,
                                   Vector4 leftEyeProjection,
-                                  float ipd) : base(codecs, width, height, sampleAspect, framerate, startBitrate, maxBitrate) { 
+                                  float ipd) : base(codecs, width, height, width, height, framerate, maxBitrate) { 
             stereoscopy = new Stereoscopy { 
                 leftEyeProjection = new float[] { leftEyeProjection.x, leftEyeProjection.y, leftEyeProjection.z, leftEyeProjection.w },
                 ipd = ipd
@@ -242,13 +247,14 @@ namespace Modoium.Service {
         [JsonProperty] private Monoscopy monoscopy;
 
         public MDMMonoVideoDesc(string[] codecs, 
-                                int width, 
-                                int height, 
+                                int contentWidth,
+                                int contentHeight,
+                                int videoWidth, 
+                                int videoHeight, 
                                 float sampleAspect,
                                 float framerate,
-                                long startBitrate,
                                 long maxBitrate,
-                                Vector4 cameraProjection) : base(codecs, width, height, sampleAspect, framerate, startBitrate, maxBitrate) {
+                                Vector4 cameraProjection) : base(codecs, contentWidth, contentHeight, videoWidth, videoHeight, framerate, maxBitrate) {
             monoscopy = new Monoscopy {
                 cameraProjection = new float[] { cameraProjection.x, cameraProjection.y, cameraProjection.z, cameraProjection.w }
             };
@@ -298,6 +304,15 @@ namespace Modoium.Service {
     public class MDMInputDesc : MDMApplicationDesc {
         [JsonProperty] public int screenWidth;
         [JsonProperty] public int screenHeight;
+        [JsonProperty("screenRotation")] public int screenRotationRaw;
+
+        public MDMScreenRotation screenRotation => screenRotationRaw switch {
+            0 => MDMScreenRotation.Portrait,
+            1 => MDMScreenRotation.LandscapeLeft,
+            2 => MDMScreenRotation.PortraitUpsideDown,
+            3 => MDMScreenRotation.LandscapeRight,
+            _ => MDMScreenRotation.Unspecified
+        };
 
         public MDMInputDesc(int screenWidth, int screenHeight) : base(new string[] { "onairxr-input" }) {
             this.screenWidth = screenWidth;
@@ -313,6 +328,9 @@ namespace Modoium.Service {
 
             Debug.Assert(dict.ContainsKey("screenHeight"));
             screenHeight = dict.Value<int>("screenHeight");
+
+            Debug.Assert(dict.ContainsKey("screenRotation"));
+            screenRotationRaw = dict.Value<int>("screenRotation");
         }
     }
 }
