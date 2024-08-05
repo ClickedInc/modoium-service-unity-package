@@ -269,28 +269,35 @@ namespace Modoium.Service {
         }
 
         private void handleRemoteViewSizeChange() {
-            if (_owner.isAppPlaying) { return; }
+            var targetSize = _rotation.CalcTargetContentSize(_owner.remoteViewDesc);
+            if (targetSize.width == _lastRemoteViewSize.x &&
+                targetSize.height == _lastRemoteViewSize.y) { return; }
 
-            var remoteView = _owner.remoteViewDesc;
-            if (remoteView.contentWidth == _lastRemoteViewSize.x &&
-                remoteView.contentHeight == _lastRemoteViewSize.y) { return; }
+            setScreenResolution(targetSize.width, targetSize.height);
 
-            setScreenResolution(remoteView.contentWidth, remoteView.contentHeight);
-
-            _lastRemoteViewSize.x = remoteView.contentWidth;
-            _lastRemoteViewSize.y = remoteView.contentHeight;
+            _lastRemoteViewSize.x = targetSize.width;
+            _lastRemoteViewSize.y = targetSize.height;
         }
 
         private void setToRemoteViewSize() {
-            var remoteView = _owner.remoteViewDesc;
+            var targetSize = _rotation.CalcTargetContentSize(_owner.remoteViewDesc);
 
-            setScreenResolution(remoteView.contentWidth, remoteView.contentHeight);
+            setScreenResolution(targetSize.width, targetSize.height);
 
-            _lastRemoteViewSize.x = remoteView.contentWidth;
-            _lastRemoteViewSize.y = remoteView.contentHeight;
+            _lastRemoteViewSize.x = targetSize.width;
+            _lastRemoteViewSize.y = targetSize.height;
         }
 
         private void setScreenResolution(int width, int height) {
+            var widthOverflow = (float)width / Display.main.systemWidth;
+            var heightOverflow = (float)height / Display.main.systemHeight;
+
+            if (widthOverflow > 1 || heightOverflow > 1) {
+                var overflow = Mathf.Max(widthOverflow, heightOverflow);
+                width = (int)(width / overflow);
+                height = (int)(height / overflow);
+            }
+
             Screen.SetResolution(width, height, Screen.fullScreen);
         }
 #endif

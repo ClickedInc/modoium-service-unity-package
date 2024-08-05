@@ -12,16 +12,16 @@ namespace Modoium.Service {
 #endif
 
         [DllImport(LibName)] private static extern int ModoiumPort();
-        [DllImport(LibName)] private static extern int ModoiumStartUpAsEmbedded(string hostname);
+        [DllImport(LibName)] private static extern int ModoiumStartUpAsEmbedded(string hostname, string verificationCode);
         [DllImport(LibName)] private static extern void ModoiumShutDown();
 
         public int port => ModoiumPort();
         public bool running => port > 0;
 
-        public void Startup() {
+        public void Startup(string verificationCode) {
             if (running) { return; }
 
-            var p = ModoiumStartUpAsEmbedded("Modoium Remote");
+            var p = ModoiumStartUpAsEmbedded("Modoium Remote", verificationCode);
             if (p > 0) {
                 ModoiumPlugin.videoBitrate = 24_000_000;
             }

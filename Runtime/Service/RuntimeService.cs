@@ -8,6 +8,10 @@ namespace Modoium.Service {
 
         private MDMService _service;
 
+        [SerializeField] private bool _requiresHub = true;
+        [SerializeField] private string _verificationCode = null;
+        [SerializeField] private ScreenOrientation _orientation = ScreenOrientation.AutoRotation;
+
         private void Awake() {
             if (instance != null) {
                 Destroy(gameObject);
@@ -51,6 +55,10 @@ namespace Modoium.Service {
         }
 
         // implements MDMService.IApplication
+        bool MDMService.IApplication.useEmbeddedCore => _requiresHub == false;
+        string MDMService.IApplication.verificationCodeForEmbeddedCore => _verificationCode;
+        bool MDMService.IApplication.isMobilePlatform => true;
+        ScreenOrientation MDMService.IApplication.orientation => _orientation;
         bool MDMService.IApplication.isPlaying => true;
     }
 }

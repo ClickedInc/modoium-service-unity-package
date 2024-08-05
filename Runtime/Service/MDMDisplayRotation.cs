@@ -8,6 +8,12 @@ using UnityEditor;
 
 namespace Modoium.Service {
     internal class MDMDisplayRotation {
+        private MDMService _owner;
+
+        public MDMDisplayRotation(MDMService owner) {
+            _owner = owner;
+        }
+
         public (int width, int height) CalcTargetContentSize(MDMVideoDesc remoteViewDesc) {
             var rotation = evalTargetContentRotation(remoteViewDesc.viewWidth, remoteViewDesc.viewHeight);
 
@@ -210,28 +216,23 @@ namespace Modoium.Service {
         private MDMScreenRotation evalTargetContentRotation(int viewWidth, 
                                                             int viewHeight, 
                                                             MDMScreenRotation viewRotation = MDMScreenRotation.Unspecified) {
-#if UNITY_EDITOR
-            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android &&
-                EditorUserBuildSettings.activeBuildTarget != BuildTarget.iOS) {
+            if (_owner.isAppMobilePlatform == false) {
                 return rotationFromDimension(viewWidth, viewHeight, viewRotation);
             }
 
-            switch (PlayerSettings.defaultInterfaceOrientation) {
-                case UIOrientation.LandscapeLeft:
-                    return MDMScreenRotation.LandscapeLeft;
-                case UIOrientation.LandscapeRight:
-                    return MDMScreenRotation.LandscapeRight;
-                case UIOrientation.Portrait:
+            switch (_owner.appOrientation) {
+                case ScreenOrientation.Portrait:
                     return MDMScreenRotation.Portrait;
-                case UIOrientation.PortraitUpsideDown:
+                case ScreenOrientation.LandscapeLeft:
+                    return MDMScreenRotation.LandscapeLeft;
+                case ScreenOrientation.PortraitUpsideDown:
                     return MDMScreenRotation.PortraitUpsideDown;
+                case ScreenOrientation.LandscapeRight:
+                    return MDMScreenRotation.LandscapeRight;
                 default:
                     return viewRotation != MDMScreenRotation.Unspecified ?
                         viewRotation : rotationFromDimension(viewWidth, viewHeight);
             }
-#else
-            return orientationFromDimension(viewWidth, viewHeight);
-#endif
         }
 
         private MDMScreenRotation rotationFromDimension(int width, int height, MDMScreenRotation rotationHint = MDMScreenRotation.Unspecified) {

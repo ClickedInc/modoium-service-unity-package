@@ -1,14 +1,17 @@
 using System;
 using System.Collections;
 using System.IO;
-using UnityEngine;
 using System.Text.RegularExpressions;
+using UnityEngine;
 using Newtonsoft.Json;
-using UnityEngine.Assertions;
 
 namespace Modoium.Service {
     internal class MDMService {
         public interface IApplication {
+            bool useEmbeddedCore { get; }
+            string verificationCodeForEmbeddedCore { get; }
+            bool isMobilePlatform { get; }
+            ScreenOrientation orientation { get; }
             bool isPlaying { get; }
         }
 
@@ -39,6 +42,8 @@ namespace Modoium.Service {
         internal MDMVideoDesc remoteViewDesc { get; private set; }
         internal MDMInputDesc remoteInputDesc { get; private set; }
         internal bool remoteViewConnected => coreConnected && remoteViewDesc != null;
+        internal bool isAppMobilePlatform => _app.isMobilePlatform;
+        internal ScreenOrientation appOrientation => _app.orientation;
         internal bool isAppPlaying => _app.isPlaying;
 
         internal string connectedDeviceName {
@@ -55,7 +60,7 @@ namespace Modoium.Service {
             _app = app;
             _messageDispatcher = new MDMMessageDispatcher();
             _serviceConfigurator = new MDMServiceConfigurator();
-            _displayRotation = new MDMDisplayRotation();
+            _displayRotation = new MDMDisplayRotation(this);
             _displayConfigurator = new MDMDisplayConfigurator(this, _displayRotation);
             _displayRenderer = new MDMDisplayRenderer(this, _displayRotation, MaxFrameRate, app as MonoBehaviour);
             _inputProvider = new MDMInputProvider(this, _displayRotation);
@@ -210,10 +215,10 @@ namespace Modoium.Service {
                 Debug.LogWarning($"[modoium] core connection failed: {failureCode} (status code {message.statusCode}): {message.reason}");
             }
 
-#if UNITY_EDITOR
-            _embeddedCore.Startup();
-            Debug.Assert(_embeddedCore.running);
-#endif
+            if (_app.useEmbeddedCore) {
+                _embeddedCore.Startup(_app.verificationCodeForEmbeddedCore);
+                Debug.Assert(_embeddedCore.running);
+            }
         }
 
         private void onCoreDisconnected(MDMMessageCoreDisconnected message) {

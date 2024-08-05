@@ -78,6 +78,21 @@ namespace Modoium.Service.Editor {
         }
 
         // implements MDMService.IApplication
+        bool MDMService.IApplication.useEmbeddedCore => true;
+        string MDMService.IApplication.verificationCodeForEmbeddedCore => null;
+
+        bool MDMService.IApplication.isMobilePlatform => 
+                EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android ||
+                EditorUserBuildSettings.activeBuildTarget == BuildTarget.iOS;
+
+        ScreenOrientation MDMService.IApplication.orientation => PlayerSettings.defaultInterfaceOrientation switch {
+            UIOrientation.LandscapeLeft => ScreenOrientation.LandscapeLeft,
+            UIOrientation.LandscapeRight => ScreenOrientation.LandscapeRight,
+            UIOrientation.Portrait => ScreenOrientation.Portrait,
+            UIOrientation.PortraitUpsideDown => ScreenOrientation.PortraitUpsideDown,
+            _ => ScreenOrientation.AutoRotation
+        };
+
         bool MDMService.IApplication.isPlaying => Application.isPlaying;
     }
 }
