@@ -213,7 +213,7 @@ namespace Modoium.Service {
 #if UNITY_EDITOR
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android &&
                 EditorUserBuildSettings.activeBuildTarget != BuildTarget.iOS) {
-                return rotationFromDimension(viewWidth, viewHeight);
+                return rotationFromDimension(viewWidth, viewHeight, viewRotation);
             }
 
             switch (PlayerSettings.defaultInterfaceOrientation) {
@@ -234,8 +234,10 @@ namespace Modoium.Service {
 #endif
         }
 
-        private MDMScreenRotation rotationFromDimension(int width, int height) {
-            return width > height ? MDMScreenRotation.LandscapeLeft : MDMScreenRotation.Portrait;
+        private MDMScreenRotation rotationFromDimension(int width, int height, MDMScreenRotation rotationHint = MDMScreenRotation.Unspecified) {
+            return width > height ? 
+                (rotationHint == MDMScreenRotation.LandscapeRight ? MDMScreenRotation.LandscapeRight : MDMScreenRotation.LandscapeLeft) : 
+                (rotationHint == MDMScreenRotation.PortraitUpsideDown ? MDMScreenRotation.PortraitUpsideDown : MDMScreenRotation.Portrait);
         }
 
         private enum Orientation {
