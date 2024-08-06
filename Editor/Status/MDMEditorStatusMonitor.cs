@@ -1,28 +1,38 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Modoium.Service.Editor {
     internal class MDMEditorStatusMonitor {
-        private const float IntervalToCheckIssues = 0.2f;
+        private const float IntervalToCheckIssues = 0.25f;
 
         private MDMService _service;
         private float _remainingToCheckIssues;
+        private bool _issuesUpdated;
 
         public Dictionary<string, MDMRemoteIssue> issues { get; private set; }
         public bool hasIssues => issues != null && issues.Count > 0;
+        
+        public bool issuesUpdated { 
+            get {
+                var updated = _issuesUpdated;
+                _issuesUpdated = false;
+
+                return updated;
+            }
+        }
 
         public MDMEditorStatusMonitor(MDMService service) {
             _service = service;
         }
 
-        public bool Update() {
+        public void Update() {
             _remainingToCheckIssues -= Time.unscaledDeltaTime;
-            if (_remainingToCheckIssues > 0) { return false; }
+            if (_remainingToCheckIssues > 0) { return; }
 
             _remainingToCheckIssues = IntervalToCheckIssues;
-
-            return checkIssues();
+            _issuesUpdated |= checkIssues();
         }
 
         private bool checkIssues() {
@@ -33,21 +43,35 @@ namespace Modoium.Service.Editor {
                 updated = true;
             }
 
-            checkIfModoiumNotConnected(ref updated);
+            checkIfIssueExists(MDMRemoteIssueRemoteGameViewNotSelected.ID, 
+                               () => MDMRemoteIssueRemoteGameViewNotSelected.IssueExists(_service),
+                               () => new MDMRemoteIssueRemoteGameViewNotSelected(_service),
+                               ref updated);
+            checkIfIssueExists(MDMRemoteIssueDeviceNotSupportXR.ID, 
+                               () => MDMRemoteIssueDeviceNotSupportXR.IssueExists(_service),
+                               () => new MDMRemoteIssueDeviceNotSupportXR(),
+                               ref updated);
+            checkIfIssueExists(MDMRemoteIssueNotRunInBackground.ID,
+                               () => MDMRemoteIssueNotRunInBackground.IssueExists(),
+                               () => new MDMRemoteIssueNotRunInBackground(),
+                               ref updated);
+            checkIfIssueExists(MDMRemoteIssueInputSystemNotEnabled.ID,
+                               () => MDMRemoteIssueInputSystemNotEnabled.IssueExists(),
+                               () => new MDMRemoteIssueInputSystemNotEnabled(),
+                               ref updated);
 
             return updated;
         }
 
-        private void checkIfModoiumNotConnected(ref bool updated) {
-            var issueExists = MDMRemoteIssueModoiumHubNotConnected.IssueExists(_service);
-            if (issues.ContainsKey(MDMRemoteIssueModoiumHubNotConnected.ID) == issueExists) { return; }
+        private void checkIfIssueExists(string id, Func<bool> issueExists, Func<MDMRemoteIssue> create, ref bool updated) {
+            var exists = issueExists();
+            if (issues.ContainsKey(id) == exists) { return; }
 
-            if (issueExists) {
-                issues.Add(MDMRemoteIssueModoiumHubNotConnected.ID, 
-                           new MDMRemoteIssueModoiumHubNotConnected(_service));
+            if (exists) {
+                issues.Add(id, create());
             }
             else {
-                issues.Remove(MDMRemoteIssueModoiumHubNotConnected.ID);
+                issues.Remove(id);
             }
 
             updated = true;

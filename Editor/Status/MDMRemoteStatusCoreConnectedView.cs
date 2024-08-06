@@ -90,7 +90,6 @@ namespace Modoium.Service.Editor {
 
             foldout.Add(createClientInstallAndroid());
             foldout.Add(createClientInstalliOS());
-            foldout.Add(createClientInstallQuest());
             return foldout;
         }
 

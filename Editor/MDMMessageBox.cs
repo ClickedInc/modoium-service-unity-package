@@ -13,8 +13,8 @@ namespace Modoium.Service.Editor {
         public MDMMessageBox(VisualElement parent, MDMRemoteIssue issue) {
             this.Padding(6);
             style.flexDirection = FlexDirection.Row;
-            style.alignItems = Align.Center;
-            style.marginTop = style.marginBottom = 10;
+            style.alignItems = Align.FlexStart;
+            style.marginTop = style.marginBottom = 4;
             style.minHeight = 44;
 
             Add(createIcon(issue));
@@ -57,6 +57,7 @@ namespace Modoium.Service.Editor {
 
                 foreach (var (label, action) in actions) {
                     var button = new Button { text = label };
+                    button.style.minWidth = 60;
                     button.clicked += action;
                     actionContainer.Add(button);
                 }

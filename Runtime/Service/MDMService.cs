@@ -33,6 +33,7 @@ namespace Modoium.Service {
 
         private bool coreConnected => state == MDMServiceState.Ready;
 
+        internal MDMDisplayConfigurator displayConfigurator => _displayConfigurator;
         internal string serviceName => _serviceConfigurator.serviceName;
         internal string hostName => ModoiumPlugin.hostName;
         internal string verificationCode => ModoiumPlugin.verificationCode;

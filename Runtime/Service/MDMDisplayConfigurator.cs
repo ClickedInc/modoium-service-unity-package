@@ -41,7 +41,7 @@ namespace Modoium.Service {
         }
 
 #if UNITY_EDITOR
-        private const string RemoteSizeLabel = "Modoium Remote";
+        public const string RemoteSizeLabel = "Modoium Remote";
 
         private Type _typeGameView;
         private MethodInfo _methodGetMainPlayModeView;
@@ -73,6 +73,15 @@ namespace Modoium.Service {
                 var prop = gameView.GetType().GetProperty("currentGameViewSize", BindingFlags.NonPublic | BindingFlags.Instance);
                 return prop.GetValue(gameView, new object[] { });
             }
+        }
+
+        public string currentSizeLabel => sizeLabel(currentSize);
+
+        public void SelectRemoteSize() {
+            var size = findRemoteSize();
+            if (size == null) { return; }
+
+            selectSize(size);
         }
 
         public void OnPostFirstMessageDispatch(MDMMessageDispatcher.Event evt) {

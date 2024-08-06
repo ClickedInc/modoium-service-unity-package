@@ -67,6 +67,8 @@ namespace Modoium.Service.Editor {
         }
 
         private void updateMessages() {
+            if (_statusMonitor.issuesUpdated == false) { return; }
+
             foreach (var message in _messages) {
                 Remove(message);
             }

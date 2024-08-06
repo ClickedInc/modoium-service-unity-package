@@ -7,7 +7,7 @@ using UnityEditor.PackageManager;
 namespace Modoium.Service.Editor {
     public static class ModoiumEditorMenu {
 #if MODOIUM_PRIVATE_API && MODOIUM_DEV
-        [MenuItem("Modoium/Pack Modoium Remote package...")]
+        [MenuItem("Tools/Modoium Remote/Pack Modoium Remote package...")]
         static async void PackPackage() {
             var packagePath = Path.GetFullPath(Path.Combine(Application.dataPath, "../../modoium-service-unity-package"));
             if (Directory.Exists(packagePath) == false) {

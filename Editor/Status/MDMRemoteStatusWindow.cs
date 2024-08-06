@@ -25,7 +25,7 @@ namespace Modoium.Service.Editor {
         private string _verificationCode = "000000";
         private string _connectedDeviceName;
 
-        [MenuItem("Modoium/View Status...", false, 100)]
+        [MenuItem("Window/Modoium Remote/View Status...", false, 100)]
         public static void OpenWindow() {
             var window = GetWindow<MDMRemoteStatusWindow>();
 
@@ -57,7 +57,7 @@ namespace Modoium.Service.Editor {
                 updateViews();
             }
 
-            _warnings.UpdateView(_state);
+            _warnings?.UpdateView(_state);
         }
 
         private void updateState(MDMService service, ref bool changed) {
