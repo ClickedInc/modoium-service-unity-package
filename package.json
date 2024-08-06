@@ -1,6 +1,6 @@
 {
     "name": "com.modoium.service",
-    "version": "0.9.1",
+    "version": "1.0.0",
     "displayName": "Modoium Remote",
     "description": "",
     "unity": "2020.3",
@@ -21,7 +21,7 @@
         "com.unity.modules.uielements": "1.0.0",
         "com.unity.nuget.newtonsoft-json": "3.2.1"
     },
-    "documentationUrl": "https://clickedcorp.notion.site/onAirXR-Unity-XR-Plugin-User-Guide-64af3154423b4ec28cb8e394b9b0e06b?pvs=4",
-    "changelogUrl": "",
-    "licensesUrl": ""
+    "documentationUrl": "https://www.clicked.co.kr/documentation.html",
+    "changelogUrl": "https://www.clicked.co.kr/documentation.html",
+    "licensesUrl": "https://www.clicked.co.kr/documentation.html"
 }
