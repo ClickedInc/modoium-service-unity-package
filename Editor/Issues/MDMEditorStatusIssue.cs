@@ -70,7 +70,7 @@ namespace Modoium.Service.Editor {
     }
 
     internal class MDMRemoteIssueInputSystemNotEnabled : MDMRemoteIssue {
-        private static string LearnMoreURL = "https://www.clicked.co.kr/documentation.html";
+        private static string LearnMoreURL = "https://clickedcorp.notion.site/Known-Issues-16f7711b0c8843cd9f660dd2bd66aa52";
 
         public static string ID = "input-system-not-enabled";
 
